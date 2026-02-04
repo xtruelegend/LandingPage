@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Downloads — Your Apps</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .downloads-container {
+        min-height: 100vh;
+        padding: 80px 24px;
+      }
+
+      .downloads-header {
+        text-align: center;
+        margin-bottom: 60px;
+      }
+
+      .downloads-header h1 {
+        font-size: 48px;
+        margin-bottom: 16px;
+        color: var(--text);
+      }
+
+      .downloads-header p {
+        font-size: 18px;
+        color: var(--text-light);
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .downloads-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 32px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .download-card {
+        background: var(--bg);
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        padding: 32px;
+        text-align: center;
+      }
+
+      .download-card-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+      }
+
+      .download-card h2 {
+        font-size: 24px;
+        margin-bottom: 12px;
+        color: var(--text);
+      }
+
+      .download-card p {
+        color: var(--text-light);
+        margin-bottom: 24px;
+        font-size: 14px;
+      }
+
+      .download-card .version {
+        display: inline-block;
+        background: var(--bg-light);
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--text-light);
+        margin-bottom: 24px;
+      }
+
+      .download-btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 209, 255, 0.35);
+      }
+
+      .license-section {
+        background: var(--bg-light);
+        border-radius: 12px;
+        padding: 32px;
+        margin-top: 60px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .license-section h2 {
+        font-size: 24px;
+        margin-bottom: 16px;
+        color: var(--text);
+      }
+
+      .license-section p {
+        color: var(--text-light);
+        margin-bottom: 24px;
+      }
+
+      .license-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        font-size: 16px;
+        margin-bottom: 16px;
+        box-sizing: border-box;
+      }
+
+      .license-btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 32px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+      }
+
+      .license-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 209, 255, 0.35);
+      }
+
+      .license-result {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: 8px;
+        display: none;
+      }
+
+      .license-result.success {
+        background: #e8f5e9;
+        color: #2e7d32;
+        display: block;
+      }
+
+      .license-result.error {
+        background: #ffebee;
+        color: #c62828;
+        display: block;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-bottom: 40px;
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .back-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="petals" id="petals"></div>
+
+    <header class="header">
+      <div class="container">
+        <div class="logo">⚡ TechApps</div>
+        <nav class="nav">
+          <a href="/" class="nav-link">Home</a>
+          <a href="/#features" class="nav-link">Features</a>
+          <a href="/#apps" class="nav-link">Apps</a>
+          <a href="/downloads.html" class="nav-link active">Downloads</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+
+        <section class="downloads-container">
+          <div class="downloads-header">
+            <h1>Your Downloads</h1>
+            <p>Access all your purchased apps here. Download installers and manage your license keys.</p>
+          </div>
+
+          <div class="license-section">
+            <h2>✓ Verify License Key</h2>
+            <p>Enter your license key to verify it and view your app details.</p>
+            <input
+              type="text"
+              id="licenseKeyInput"
+              class="license-input"
+              placeholder="XXXX-XXXX-XXXX-XXXX"
+            />
+            <button class="license-btn" onclick="verifyLicenseKey()">Verify License</button>
+            <div id="licenseResult" class="license-result"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>© 2026 TechApps. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+      async function verifyLicenseKey() {
+        const key = document.getElementById("licenseKeyInput").value.trim();
+        const resultDiv = document.getElementById("licenseResult");
+
+        if (!key) {
+          resultDiv.className = "license-result error";
+          resultDiv.textContent = "Please enter a license key.";
+          return;
+        }
+
+        // Check format first
+        const keyFormat = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
+        if (!keyFormat.test(key)) {
+          resultDiv.className = "license-result error";
+          resultDiv.textContent = "Invalid license key format.";
+          return;
+        }
+
+        // Verify against backend
+        resultDiv.className = "license-result";
+        resultDiv.textContent = "Verifying...";
+        resultDiv.style.display = "block";
+
+        try {
+          const response = await fetch("/api/verify-key", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: key.toUpperCase() })
+          });
+
+          const data = await response.json();
+
+          if (data.valid) {
+            // Valid key - show success and start download
+            resultDiv.className = "license-result success";
+            resultDiv.innerHTML = `
+              <strong>✓ License Valid!</strong><br>
+              Key: ${key.toUpperCase()}<br>
+              Product: ${data.product}<br>
+              Email: ${data.email}<br><br>
+              <span style="font-size: 14px;">Your download is starting...</span>
+            `;
+
+            // Start the download automatically
+            setTimeout(() => {
+              const link = document.createElement('a');
+              link.href = '/downloads/BudgetXT-Setup-1.5.3.exe';
+              link.click();
+            }, 500);
+          } else {
+            resultDiv.className = "license-result error";
+            resultDiv.textContent = "❌ License key not found. Please check your key and try again.";
+          }
+        } catch (error) {
+          resultDiv.className = "license-result error";
+          resultDiv.textContent = "Error verifying key. Please try again.";
+          console.error("Verify error:", error);
+        }
+      }
+
+      // Allow Enter key to verify
+      document.getElementById("licenseKeyInput").addEventListener("keypress", function(e) {
+        if (e.key === "Enter") verifyLicenseKey();
+      });
+    </script>
+  </body>
+</html>

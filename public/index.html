@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Premium Apps — Tech Solutions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="petals" id="petals"></div>
+    
+    <header class="header">
+      <div class="container">
+        <div class="logo">⚡ TechApps</div>
+        <nav class="nav">
+          <a href="#home" class="nav-link active">Home</a>
+          <a href="#features" class="nav-link">Features</a>
+          <a href="#apps" class="nav-link">Apps</a>
+          <a href="#testimonials" class="nav-link">Reviews</a>
+          <a href="#faq" class="nav-link">FAQ</a>
+          <a href="downloads.html" class="nav-link">Downloads</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" id="home">
+        <div class="container">
+          <div class="hero-content">
+            <h1 class="hero-title">Tools Made<br />for Your Journey</h1>
+            <p class="hero-desc">
+              Simple, practical apps to help you with everyday challenges.
+              Built solo, designed for real people. Get instant access, forever updates.
+            </p>
+            <button class="btn-primary" onclick="scrollToApps()">
+              Explore Apps
+            </button>
+          </div>
+          <div class="hero-visual">
+            <div class="tech-circle"></div>
+            <div class="tech-icon">⚡</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="features" id="features">
+        <div class="container">
+          <h2 class="section-title">Made for Your Everyday Journey</h2>
+          <div class="features-grid">
+            <div class="feature-card">
+              <div class="feature-icon">🤝</div>
+              <h3>Built by One Person</h3>
+              <p>Created with care and personal attention. No corporate bloat—just practical tools that actually work</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🌍</div>
+              <h3>For Everyone</h3>
+              <p>Whether you're starting a side hustle, growing a small business, or just exploring—these tools are made for real people</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">💪</div>
+              <h3>Your Entrepreneurial Toolkit</h3>
+              <p>Simple, practical solutions to help you get started and keep moving forward on your own terms</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">❤️</div>
+              <h3>Made with Heart</h3>
+              <p>Fair pricing, honest features, and genuine support. I'm here because I believe in what I'm building</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="apps" id="apps">
+        <div class="container">
+          <h2 class="section-title">Our Apps</h2>
+          <div class="carousel">
+            <div class="carousel-track" id="appsGrid" role="list">
+              <!-- Apps rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="testimonials" id="testimonials">
+        <div class="container">
+          <h2 class="section-title">What Our Users Say</h2>
+          <div class="testimonials-grid">
+            <div class="testimonial-card">
+              <p class="testimonial-text">
+                "These apps have completely transformed my workflow. The quality and attention to detail is outstanding."
+              </p>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar">👩</div>
+                <div class="testimonial-info">
+                  <h4>Sarah Chen</h4>
+                  <p>Creative Director</p>
+                </div>
+              </div>
+            </div>
+            <div class="testimonial-card">
+              <p class="testimonial-text">
+                "Instant delivery and excellent support. The license key arrived in seconds and everything works perfectly."
+              </p>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar">👨</div>
+                <div class="testimonial-info">
+                  <h4>Michael Torres</h4>
+                  <p>Software Engineer</p>
+                </div>
+              </div>
+            </div>
+            <div class="testimonial-card">
+              <p class="testimonial-text">
+                "Best investment I've made for my business. Clean interface, powerful features, and great value."
+              </p>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar">👩</div>
+                <div class="testimonial-info">
+                  <h4>Emily Rodriguez</h4>
+                  <p>Business Owner</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="faq" id="faq">
+        <div class="container">
+          <h2 class="section-title">Frequently Asked Questions</h2>
+          <div class="faq-list">
+            <div class="faq-item">
+              <h3 class="faq-question">How does the purchase process work?</h3>
+              <p class="faq-answer">
+                Simply click on any app, enter your email, and complete the payment through PayPal. You'll receive your license key instantly via email.
+              </p>
+            </div>
+            <div class="faq-item">
+              <h3 class="faq-question">What payment methods do you accept?</h3>
+              <p class="faq-answer">
+                We accept all major payment methods through PayPal, including credit cards, debit cards, and PayPal balance.
+              </p>
+            </div>
+            <div class="faq-item">
+              <h3 class="faq-question">Do I get lifetime updates?</h3>
+              <p class="faq-answer">
+                Yes! Your purchase includes free lifetime updates for the app. You'll always have access to the latest features and improvements.
+              </p>
+            </div>
+            <div class="faq-item">
+              <h3 class="faq-question">Can I use the app on multiple devices?</h3>
+              <p class="faq-answer">
+                Your license key can be used on up to 3 devices. If you need more, please contact our support team.
+              </p>
+            </div>
+            <div class="faq-item">
+              <h3 class="faq-question">What if I don't receive my license key?</h3>
+              <p class="faq-answer">
+                License keys are delivered instantly. Check your spam folder first. If you still don't see it, contact our support team with your order details.
+              </p>
+            </div>
+            <div class="faq-item">
+              <h3 class="faq-question">Is there a refund policy?</h3>
+              <p class="faq-answer">
+                We offer a 30-day money-back guarantee. If you're not satisfied with your purchase, contact us for a full refund.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-section">
+        <div class="container">
+          <div class="cta-content">
+            <h2>Ready to enhance your workflow?</h2>
+            <p>Join thousands of satisfied users and get started today</p>
+            <div class="cta-buttons">
+              <button class="btn-primary" onclick="scrollToApps()">
+                Browse Apps
+              </button>
+              <a href="#faq" class="btn-secondary">Learn More</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>© 2026 TechApps. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <!-- App Modal -->
+    <div class="modal" id="appModal">
+      <div class="modal-overlay" onclick="closeModal()"></div>
+      <div class="modal-container">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div class="modal-visual" id="modalVisual"></div>
+        <div class="modal-body">
+          <h2 id="modalTitle"></h2>
+          <p id="modalDesc"></p>
+          <div class="modal-price" id="modalPrice"></div>
+          <div class="modal-form">
+            <label for="modalEmail">Email for delivery</label>
+            <input
+              type="email"
+              id="modalEmail"
+              placeholder="you@example.com"
+              required
+            />
+            <button class="btn-paypal" id="buyNowBtn" onclick="initiatePayPalCheckout()">
+              Pay with PayPal
+            </button>
+            <p class="modal-note" id="modalNote"></p>
+            <div class="modal-success" id="modalSuccess">
+              <h3>✓ Payment Complete!</h3>
+              <p>Your license key:</p>
+              <div class="license-key" id="modalKey"></div>
+              <p class="success-note">Check your email for a copy and download link.</p>
+              <a href="" id="downloadLink" class="btn-primary" style="display: inline-block; margin-top: 16px; text-decoration: none; text-align: center;">
+                Download BudgetXT
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
