@@ -128,6 +128,13 @@
         font-size: 16px;
         margin-bottom: 16px;
         box-sizing: border-box;
+        font-family: inherit;
+      }
+
+      .license-input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
       }
 
       .license-btn {
@@ -217,6 +224,36 @@
             <button class="license-btn" onclick="verifyLicenseKey()">Verify License</button>
             <div id="licenseResult" class="license-result"></div>
           </div>
+
+          <div class="license-section" style="margin-top: 48px; padding-top: 48px; border-top: 2px solid var(--border);">
+            <h2>📧 Resend License Key</h2>
+            <p>Didn't receive your license key email? Enter your details below and we'll resend it.</p>
+            <input
+              type="email"
+              id="resendEmail"
+              class="license-input"
+              placeholder="your-email@example.com"
+            />
+            <input
+              type="text"
+              id="resendKey"
+              class="license-input"
+              placeholder="Your license key (BBT1.XXXXXXXX.XXXXXXXX)"
+              style="margin-top: 12px;"
+            />
+            <select id="resendApp" class="license-input" style="margin-top: 12px;">
+              <option value="">-- Select Your App --</option>
+              <option value="BudgetXT">BudgetXT</option>
+              <option value="AgendaXT">AgendaXT</option>
+              <option value="InventoryXT">InventoryXT</option>
+              <option value="FileSorterXT">FileSorterXT</option>
+              <option value="BookedXT">BookedXT</option>
+              <option value="PanicXT">PanicXT</option>
+              <option value="RoccoXT">RoccoXT</option>
+            </select>
+            <button class="license-btn" onclick="resendLicenseKey()" style="margin-top: 12px;">Resend License Email</button>
+            <div id="resendResult" class="license-result"></div>
+          </div>
         </section>
       </div>
     </main>
@@ -283,9 +320,64 @@
         }
       }
 
+      async function resendLicenseKey() {
+        const email = document.getElementById("resendEmail").value.trim();
+        const key = document.getElementById("resendKey").value.trim();
+        const appName = document.getElementById("resendApp").value.trim();
+        const resultDiv = document.getElementById("resendResult");
+
+        if (!email || !key || !appName) {
+          resultDiv.className = "license-result error";
+          resultDiv.textContent = "Please fill in all fields (email, license key, and app name).";
+          return;
+        }
+
+        resultDiv.className = "license-result";
+        resultDiv.textContent = "Sending license key email...";
+        resultDiv.style.display = "block";
+
+        try {
+          const response = await fetch("/api/resend-key", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              email: email,
+              licenseKey: key.toUpperCase(),
+              appName: appName
+            })
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            resultDiv.className = "license-result success";
+            resultDiv.innerHTML = `
+              <strong>✓ Email Sent!</strong><br>
+              Your license key has been resent to <strong>${email}</strong>.<br>
+              Check your inbox (or spam folder) for the receipt and download link.
+            `;
+            document.getElementById("resendEmail").value = "";
+            document.getElementById("resendKey").value = "";
+            document.getElementById("resendApp").value = "";
+          } else {
+            resultDiv.className = "license-result error";
+            resultDiv.textContent = `✗ Error: ${data.error || "Failed to resend email"}`;
+          }
+        } catch (error) {
+          resultDiv.className = "license-result error";
+          resultDiv.textContent = "Error sending email. Please try again.";
+          console.error("Resend error:", error);
+        }
+      }
+
       // Allow Enter key to verify
       document.getElementById("licenseKeyInput").addEventListener("keypress", function(e) {
         if (e.key === "Enter") verifyLicenseKey();
+      });
+
+      // Allow Enter key to resend
+      document.getElementById("resendKey").addEventListener("keypress", function(e) {
+        if (e.key === "Enter") resendLicenseKey();
       });
     </script>
   </body>
