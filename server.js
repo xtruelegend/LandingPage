@@ -19,6 +19,10 @@ const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
 const PAYPAL_ENV = process.env.PAYPAL_ENV || "sandbox";
 const PRODUCT_PRICE = process.env.PRODUCT_PRICE || "9.99";
 const CURRENCY = process.env.CURRENCY || "USD";
+const KEYS_REMOTE_URL = process.env.KEYS_REMOTE_URL || "";
+const KEYS_VALIDATE_URL = process.env.KEYS_VALIDATE_URL || "";
+const DEFAULT_KEYS_PATH = path.join(DATA_DIR, "allowed-keys.json");
+const KEYS_LOCAL_PATH = process.env.KEYS_LOCAL_PATH || DEFAULT_KEYS_PATH;
 
 const SMTP_HOST = process.env.SMTP_HOST || "";
 const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
@@ -129,33 +133,96 @@ app.get("/api/config", (req, res) => {
   });
 });
 
-app.post("/api/verify-key", (req, res) => {
+app.post("/api/verify-key", async (req, res) => {
   try {
     const { key } = req.body;
-    
+
     if (!key) {
       return res.status(400).json({ error: "Key is required" });
     }
 
-    ensureDataFile();
-    const keys = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
-    
-    // Find the key in the list
-    const foundKey = keys.find(k => k.licenseKey === key.toUpperCase());
-    
-    if (foundKey) {
-      res.json({
+    const normalizedKey = key.toUpperCase();
+
+    const localMatchesKey = () => {
+      ensureDataFile();
+      const raw = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
+      const localRecords = Array.isArray(raw) ? raw : [];
+      const found = localRecords.find((record) => record.licenseKey === normalizedKey);
+      if (!found) return null;
+      return {
         valid: true,
-        email: foundKey.email,
-        product: foundKey.product,
-        timestamp: foundKey.timestamp
-      });
-    } else {
-      res.status(401).json({
-        valid: false,
-        error: "License key not found"
-      });
+        email: found.email,
+        product: found.product,
+        timestamp: found.timestamp
+      };
+    };
+
+    const remoteMatchesKey = async () => {
+      if (KEYS_VALIDATE_URL) {
+        const response = await fetch(KEYS_VALIDATE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: normalizedKey })
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload?.valid) return null;
+
+        return {
+          valid: true,
+          email: null,
+          product: "BudgetXT",
+          timestamp: null
+        };
+      }
+
+      const loadKeysPayload = async () => {
+        if (KEYS_LOCAL_PATH && fs.existsSync(KEYS_LOCAL_PATH)) {
+          const raw = await fs.promises.readFile(KEYS_LOCAL_PATH, "utf8");
+          return JSON.parse(raw);
+        }
+
+        if (!KEYS_REMOTE_URL) return null;
+        const response = await fetch(KEYS_REMOTE_URL);
+        if (!response.ok) return null;
+        return response.json();
+      };
+
+      const payload = await loadKeysPayload();
+      if (!payload) return null;
+
+      let keysList = [];
+      if (Array.isArray(payload)) {
+        keysList = payload;
+      } else if (Array.isArray(payload.keys)) {
+        keysList = payload.keys;
+      }
+
+      const exists = keysList.some((item) => String(item).toUpperCase() === normalizedKey);
+      if (!exists) return null;
+
+      return {
+        valid: true,
+        email: null,
+        product: "BudgetXT",
+        timestamp: null
+      };
+    };
+
+    const localResult = localMatchesKey();
+    if (localResult) {
+      return res.json(localResult);
     }
+
+    const remoteResult = await remoteMatchesKey();
+    if (remoteResult) {
+      return res.json(remoteResult);
+    }
+
+    return res.status(401).json({
+      valid: false,
+      error: "License key not found"
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -247,7 +314,7 @@ app.post("/api/orders/:orderID/capture", async (req, res) => {
     saveLicenseKey({
       orderId: orderID,
       email: desiredEmail,
-      key: licenseKey,
+      licenseKey,
       product: productName,
       createdAt: new Date().toISOString()
     });

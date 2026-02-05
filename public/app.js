@@ -72,6 +72,7 @@ async function loadConfig() {
 
 function renderApps() {
   const grid = document.getElementById("appsGrid");
+  if (!grid) return;
   const renderCard = (app) => `
     <div class="app-card" onclick="openModal(${app.id})" role="listitem">
       <div style="font-size: 64px; margin-bottom: 16px;">${app.icon}</div>
@@ -258,24 +259,31 @@ async function initiatePayPalCheckout() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadConfig();
-  renderApps();
+
+  const appsGrid = document.getElementById("appsGrid");
+  if (appsGrid) {
+    renderApps();
+  }
+
   createPetals();
   initCursorTrail();
 
-  // Handle PayPal return
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get("success") === "true") {
-    const key = urlParams.get("key");
-    if (key) {
-      // Show modal with success
-      const modal = document.getElementById("appModal");
-      modal.classList.add("active");
-      document.getElementById("modalSuccess").classList.add("active");
-      document.getElementById("modalKey").textContent = key;
-      document.getElementById("downloadLink").href = "/downloads/BudgetXT-Setup-1.5.3.exe";
-      
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
+  // Handle PayPal return (only on pages that have the modal)
+  const modal = document.getElementById("appModal");
+  if (modal) {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("success") === "true") {
+      const key = urlParams.get("key");
+      if (key) {
+        // Show modal with success
+        modal.classList.add("active");
+        document.getElementById("modalSuccess").classList.add("active");
+        document.getElementById("modalKey").textContent = key;
+        document.getElementById("downloadLink").href = "/downloads/BudgetXT-Setup-1.5.3.exe";
+
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     }
   }
 });

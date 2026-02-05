@@ -239,13 +239,7 @@
           return;
         }
 
-        // Check format first
-        const keyFormat = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
-        if (!keyFormat.test(key)) {
-          resultDiv.className = "license-result error";
-          resultDiv.textContent = "Invalid license key format.";
-          return;
-        }
+        // Skip strict format validation and rely on backend verification
 
         // Verify against backend
         resultDiv.className = "license-result";
