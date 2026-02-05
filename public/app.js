@@ -84,7 +84,7 @@ function renderApps() {
         <div class="app-launch-label">Launch Special</div>
         <div class="app-price">
           <span class="price-original">$35</span>
-          <span class="price-current" id="budgetxtCardPrice">$${app.price}</span>
+          <span class="price-current budgetxt-card-price">$${app.price}</span>
         </div>
       `
       : `<div class="app-price">$${app.price}</div>`;
@@ -114,9 +114,11 @@ async function updateLaunchPricing() {
     if (featuredPrice) {
       featuredPrice.textContent = `$${pricing.currentPrice}`;
     }
-    const cardPrice = document.getElementById("budgetxtCardPrice");
-    if (cardPrice) {
-      cardPrice.textContent = `$${pricing.currentPrice}`;
+    const cardPrices = document.querySelectorAll(".budgetxt-card-price");
+    if (cardPrices.length) {
+      cardPrices.forEach((priceEl) => {
+        priceEl.textContent = `$${pricing.currentPrice}`;
+      });
     }
   } catch (error) {
     console.error("Failed to update launch pricing:", error);
