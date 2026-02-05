@@ -864,6 +864,78 @@ app.get("/api/pricing", (req, res) => {
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
+
+// Simple admin authentication
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "changeme123";
+
+app.post("/api/admin/login", (req, res) => {
+  try {
+    const { password } = req.body;
+    if (password === ADMIN_PASSWORD) {
+      const token = Buffer.from(`admin:${Date.now()}`).toString('base64');
+      res.json({ success: true, token });
+    } else {
+      res.status(401).json({ error: "Invalid password" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/admin/verify-token", (req, res) => {
+  try {
+    const { token } = req.body;
+    if (token && token.startsWith(Buffer.from('admin:').toString('base64').substring(0, 8))) {
+      res.json({ valid: true });
+    } else {
+      res.status(401).json({ valid: false });
+    }
+  } catch (error) {
+    res.status(401).json({ valid: false });
+  }
+});
+
+app.post("/api/admin/send-key", async (req, res) => {
+  try {
+    const { email, appName } = req.body;
+    
+    if (!email || !appName) {
+      return res.status(400).json({ error: "Email and app name are required" });
+    }
+
+    const licenseKey = await getPooledLicenseKey();
+    if (!licenseKey) {
+      return res.status(500).json({ error: "No license keys available in pool" });
+    }
+
+    await saveLicenseKey({
+      orderId: `MANUAL-${Date.now()}`,
+      email: email.trim(),
+      licenseKey,
+      product: appName,
+      createdAt: new Date().toISOString()
+    });
+
+    const emailResult = await sendKeyEmail(email.trim(), licenseKey, appName);
+    
+    if (emailResult?.skipped) {
+      return res.json({ 
+        success: true, 
+        key: licenseKey,
+        warning: "Email sending is not configured. Key generated but not sent." 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      key: licenseKey,
+      message: `License key sent to ${email}` 
+    });
+  } catch (error) {
+    console.error("Manual send key error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 });
 
 // Submit review endpoint

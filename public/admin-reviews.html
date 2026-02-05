@@ -3,13 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin - Review Moderation</title>
+    <title>Admin Dashboard</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
       .admin-container {
         max-width: 1200px;
         margin: 40px auto;
         padding: 20px;
+      }
+      .login-container {
+        max-width: 400px;
+        margin: 100px auto;
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      }
+      .login-container h2 {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 8px;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
       }
       .review-item {
         background: white;
@@ -48,6 +76,10 @@
         cursor: pointer;
         font-size: 14px;
       }
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
       .btn-approve {
         background: #34c759;
         color: white;
@@ -56,22 +88,207 @@
         background: #ff3b30;
         color: white;
       }
+      .btn-logout {
+        background: #666;
+        color: white;
+        float: right;
+      }
       .empty-state {
         text-align: center;
         padding: 60px 20px;
         color: #666;
       }
+      .admin-section {
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 30px;
+      }
+      .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 12px;
+      }
+      .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 12px;
+      }
     </style>
   </head>
   <body>
-    <div class="admin-container">
-      <h1>Review Moderation</h1>
-      <p style="color: #666; margin-bottom: 30px;">Approve or delete customer reviews before they appear on the website.</p>
-      
-      <div id="reviewsContainer"></div>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+      <h2>🔒 Admin Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+      </form>
+      <div id="loginError" style="margin-top: 12px; color: #ff3b30; display: none;"></div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="admin-container" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1>Admin Dashboard</h1>
+        <button class="btn btn-logout" onclick="logout()">Logout</button>
+      </div>
+
+      <!-- Manual Key Sending -->
+      <div class="admin-section">
+        <h2>📧 Send License Key Manually</h2>
+        <p style="color: #666; margin-bottom: 20px;">Send a unique license key to any email address.</p>
+        <form id="sendKeyForm">
+          <div class="form-group">
+            <label>Customer Email</label>
+            <input type="email" id="sendKeyEmail" required>
+          </div>
+          <div class="form-group">
+            <label>Product</label>
+            <select id="sendKeyProduct" required>
+              <option value="BudgetXT">BudgetXT</option>
+              <option value="AgendaXT">AgendaXT</option>
+              <option value="InventoryXT">InventoryXT</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Send License Key</button>
+        </form>
+        <div id="sendKeyResult"></div>
+      </div>
+
+      <!-- Review Moderation -->
+      <div class="admin-section">
+        <h2>⭐ Review Moderation</h2>
+        <p style="color: #666; margin-bottom: 20px;">Approve or delete customer reviews before they appear on the website.</p>
+        <div id="reviewsContainer"></div>
+      </div>
     </div>
 
     <script>
+      let authToken = localStorage.getItem('adminToken');
+
+      async function checkAuth() {
+        if (!authToken) {
+          showLogin();
+          return false;
+        }
+
+        try {
+          const response = await fetch('/api/admin/verify-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: authToken })
+          });
+
+          if (response.ok) {
+            showDashboard();
+            return true;
+          } else {
+            showLogin();
+            return false;
+          }
+        } catch (error) {
+          showLogin();
+          return false;
+        }
+      }
+
+      function showLogin() {
+        document.getElementById('loginScreen').style.display = 'block';
+        document.getElementById('adminDashboard').style.display = 'none';
+      }
+
+      function showDashboard() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        loadPendingReviews();
+      }
+
+      function logout() {
+        localStorage.removeItem('adminToken');
+        authToken = null;
+        showLogin();
+      }
+
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+
+        try {
+          const response = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            authToken = data.token;
+            localStorage.setItem('adminToken', authToken);
+            showDashboard();
+          } else {
+            errorDiv.textContent = 'Invalid password';
+            errorDiv.style.display = 'block';
+          }
+        } catch (error) {
+          errorDiv.textContent = 'Login failed. Please try again.';
+          errorDiv.style.display = 'block';
+        }
+      });
+
+      document.getElementById('sendKeyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('sendKeyEmail').value;
+        const appName = document.getElementById('sendKeyProduct').value;
+        const resultDiv = document.getElementById('sendKeyResult');
+
+        resultDiv.innerHTML = '<p>Sending license key...</p>';
+
+        try {
+          const response = await fetch('/api/admin/send-key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, appName })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            resultDiv.innerHTML = `
+              <div class="success-message">
+                <strong>✓ Success!</strong><br>
+                License Key: <code>${data.key}</code><br>
+                Sent to: ${email}<br>
+                ${data.warning || data.message}
+              </div>
+            `;
+            document.getElementById('sendKeyForm').reset();
+          } else {
+            resultDiv.innerHTML = `
+              <div class="error-message">
+                <strong>✗ Error:</strong> ${data.error}
+              </div>
+            `;
+          }
+        } catch (error) {
+          resultDiv.innerHTML = `
+            <div class="error-message">
+              <strong>✗ Error:</strong> Failed to send key
+            </div>
+          `;
+        }
+      });
+
       async function loadPendingReviews() {
         const container = document.getElementById('reviewsContainer');
         container.innerHTML = '<p style="text-align: center;">Loading reviews...</p>';
@@ -170,11 +387,13 @@
         }
       }
       
-      // Load reviews on page load
-      loadPendingReviews();
+      checkAuth();
       
-      // Auto-refresh every 30 seconds
-      setInterval(loadPendingReviews, 30000);
+      setInterval(() => {
+        if (authToken) {
+          loadPendingReviews();
+        }
+      }, 30000);
     </script>
   </body>
 </html>
