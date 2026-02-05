@@ -4,6 +4,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import nodemailer from "nodemailer";
+import { createClient } from "redis";
 import { fileURLToPath } from "url";
 
 dotenv.config();
@@ -17,40 +18,99 @@ const PORT = process.env.PORT || 3000;
 // Redis/KV Store connection
 const KV_REST_API_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || "";
 const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "";
+const REDIS_URL = process.env.REDIS_URL || "";
+const HAS_REST = Boolean(KV_REST_API_URL && KV_REST_API_TOKEN);
+const HAS_REDIS = Boolean(REDIS_URL);
+
+let redisClient = null;
+let redisConnecting = null;
+
+async function getRedisClient() {
+  if (!HAS_REDIS) return null;
+  if (redisClient && redisClient.isOpen) return redisClient;
+  if (redisConnecting) return redisConnecting;
+
+  redisClient = createClient({ url: REDIS_URL });
+  redisClient.on("error", (err) => {
+    console.error("Redis client error:", err.message);
+  });
+
+  redisConnecting = redisClient.connect()
+    .then(() => {
+      redisConnecting = null;
+      return redisClient;
+    })
+    .catch((err) => {
+      console.error("Redis connect error:", err.message);
+      redisConnecting = null;
+      return null;
+    });
+
+  return redisConnecting;
+}
 
 const kvStore = {
   async set(key, value) {
-    if (!KV_REST_API_URL || !KV_REST_API_TOKEN) return false;
-    try {
-      const response = await fetch(`${KV_REST_API_URL}/set/${key}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${KV_REST_API_TOKEN}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ value })
-      });
-      return response.ok;
-    } catch (err) {
-      console.error("KV set error:", err.message);
-      return false;
+    if (HAS_REST) {
+      try {
+        const response = await fetch(`${KV_REST_API_URL}/set/${key}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${KV_REST_API_TOKEN}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ value })
+        });
+        return response.ok;
+      } catch (err) {
+        console.error("KV set error:", err.message);
+        return false;
+      }
     }
+
+    if (HAS_REDIS) {
+      try {
+        const client = await getRedisClient();
+        if (!client) return false;
+        await client.set(key, value);
+        return true;
+      } catch (err) {
+        console.error("Redis set error:", err.message);
+        return false;
+      }
+    }
+
+    return false;
   },
   async get(key) {
-    if (!KV_REST_API_URL || !KV_REST_API_TOKEN) return null;
-    try {
-      const response = await fetch(`${KV_REST_API_URL}/get/${key}`, {
-        headers: {
-          Authorization: `Bearer ${KV_REST_API_TOKEN}`
-        }
-      });
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data.result;
-    } catch (err) {
-      console.error("KV get error:", err.message);
-      return null;
+    if (HAS_REST) {
+      try {
+        const response = await fetch(`${KV_REST_API_URL}/get/${key}`, {
+          headers: {
+            Authorization: `Bearer ${KV_REST_API_TOKEN}`
+          }
+        });
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.result;
+      } catch (err) {
+        console.error("KV get error:", err.message);
+        return null;
+      }
     }
+
+    if (HAS_REDIS) {
+      try {
+        const client = await getRedisClient();
+        if (!client) return null;
+        return await client.get(key);
+      } catch (err) {
+        console.error("Redis get error:", err.message);
+        return null;
+      }
+    }
+
+    return null;
   }
 };
 
@@ -994,7 +1054,7 @@ app.post("/api/submit-review", async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
+    if (!HAS_REST && !HAS_REDIS) {
       return res.status(500).json({ error: "Review storage not configured" });
     }
 
