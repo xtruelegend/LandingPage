@@ -864,16 +864,39 @@ app.get("/api/pricing", (req, res) => {
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
+});
 
 // Simple admin authentication
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "changeme123";
+const ADMIN_TOKEN_KEY = "admin_token";
+
+async function setAdminToken(token) {
+  await kvStore.set(ADMIN_TOKEN_KEY, token);
+}
+
+async function getAdminToken() {
+  const stored = await kvStore.get(ADMIN_TOKEN_KEY);
+  return stored || "";
+}
+
+async function requireAdmin(req, res) {
+  const token = req.headers["x-admin-token"] || "";
+  const stored = await getAdminToken();
+  if (!token || !stored || token !== stored) {
+    res.status(401).json({ error: "Unauthorized" });
+    return false;
+  }
+  return true;
+}
 
 app.post("/api/admin/login", (req, res) => {
   try {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
       const token = Buffer.from(`admin:${Date.now()}`).toString('base64');
-      res.json({ success: true, token });
+      setAdminToken(token).then(() => {
+        res.json({ success: true, token });
+      });
     } else {
       res.status(401).json({ error: "Invalid password" });
     }
@@ -885,11 +908,13 @@ app.post("/api/admin/login", (req, res) => {
 app.post("/api/admin/verify-token", (req, res) => {
   try {
     const { token } = req.body;
-    if (token && token.startsWith(Buffer.from('admin:').toString('base64').substring(0, 8))) {
-      res.json({ valid: true });
-    } else {
-      res.status(401).json({ valid: false });
-    }
+    getAdminToken().then((stored) => {
+      if (token && stored && token === stored) {
+        res.json({ valid: true });
+      } else {
+        res.status(401).json({ valid: false });
+      }
+    });
   } catch (error) {
     res.status(401).json({ valid: false });
   }
@@ -897,6 +922,8 @@ app.post("/api/admin/verify-token", (req, res) => {
 
 app.post("/api/admin/send-key", async (req, res) => {
   try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
     const { email, appName } = req.body;
     
     if (!email || !appName) {
@@ -935,7 +962,6 @@ app.post("/api/admin/send-key", async (req, res) => {
     console.error("Manual send key error:", error);
     res.status(500).json({ error: error.message });
   }
-});
 });
 
 // Submit review endpoint
@@ -1001,6 +1027,8 @@ app.get("/api/reviews", async (req, res) => {
 // Admin: Get pending reviews
 app.get("/api/admin/pending-reviews", async (req, res) => {
   try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
     let pendingReviews = [];
     const reviews = await kvStore.get("pending_reviews");
     if (reviews) {
@@ -1016,6 +1044,8 @@ app.get("/api/admin/pending-reviews", async (req, res) => {
 // Admin: Approve review
 app.post("/api/admin/approve-review", async (req, res) => {
   try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
     const { reviewId } = req.body;
     if (!reviewId) {
       return res.status(400).json({ error: "Review ID required" });
@@ -1060,6 +1090,8 @@ app.post("/api/admin/approve-review", async (req, res) => {
 // Admin: Delete review
 app.post("/api/admin/delete-review", async (req, res) => {
   try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
     const { reviewId } = req.body;
     if (!reviewId) {
       return res.status(400).json({ error: "Review ID required" });

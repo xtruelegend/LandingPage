@@ -175,6 +175,13 @@
     <script>
       let authToken = localStorage.getItem('adminToken');
 
+      function adminHeaders() {
+        return {
+          'Content-Type': 'application/json',
+          'x-admin-token': authToken || ''
+        };
+      }
+
       async function checkAuth() {
         if (!authToken) {
           showLogin();
@@ -257,7 +264,7 @@
         try {
           const response = await fetch('/api/admin/send-key', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: adminHeaders(),
             body: JSON.stringify({ email, appName })
           });
 
@@ -294,7 +301,9 @@
         container.innerHTML = '<p style="text-align: center;">Loading reviews...</p>';
         
         try {
-          const response = await fetch('/api/admin/pending-reviews');
+          const response = await fetch('/api/admin/pending-reviews', {
+            headers: adminHeaders()
+          });
           const data = await response.json();
           
           if (data.reviews.length === 0) {
@@ -345,7 +354,7 @@
         try {
           const response = await fetch('/api/admin/approve-review', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: adminHeaders(),
             body: JSON.stringify({ reviewId })
           });
           
@@ -369,7 +378,7 @@
         try {
           const response = await fetch('/api/admin/delete-review', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: adminHeaders(),
             body: JSON.stringify({ reviewId })
           });
           
