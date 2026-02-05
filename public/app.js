@@ -15,7 +15,9 @@ const APPS = [
     desc: "Simple, powerful budget tracking and financial planning for everyday use (Windows PC)",
     price: "14.99",
     icon: "💰",
-    status: "available"
+    status: "available",
+    fileSize: "45 MB",
+    requirements: "Windows 10/11 (64-bit)"
   },
   {
     id: 2,
@@ -23,7 +25,9 @@ const APPS = [
     desc: "Smart daily planning with focus blocks, reminders, and clean schedules (Windows PC)",
     price: "19.99",
     icon: "🗓️",
-    status: "coming-soon"
+    status: "coming-soon",
+    fileSize: "38 MB",
+    requirements: "Windows 10/11 (64-bit)"
   },
   {
     id: 3,
@@ -31,7 +35,9 @@ const APPS = [
     desc: "Simple inventory tracking with low-stock alerts and quick exports (Windows PC)",
     price: "29.99",
     icon: "📦",
-    status: "coming-soon"
+    status: "coming-soon",
+    fileSize: "52 MB",
+    requirements: "Windows 10/11 (64-bit)"
   },
   {
     id: 4,
@@ -39,7 +45,9 @@ const APPS = [
     desc: "Organize files automatically with rules, tags, and smart cleanup (Windows PC)",
     price: "14.99",
     icon: "🗂️",
-    status: "coming-soon"
+    status: "coming-soon",
+    fileSize: "35 MB",
+    requirements: "Windows 10/11 (64-bit)"
   },
   {
     id: 5,
@@ -47,7 +55,9 @@ const APPS = [
     desc: "Client booking, calendar sync, and payments in one place (Windows PC)",
     price: "24.99",
     icon: "📅",
-    status: "coming-soon"
+    status: "coming-soon",
+    fileSize: "48 MB",
+    requirements: "Windows 10/11 (64-bit)"
   },
   {
     id: 6,
@@ -55,7 +65,9 @@ const APPS = [
     desc: "Instant emergency checklists and one-tap safety actions (Windows PC)",
     price: "11.99",
     icon: "🚨",
-    status: "coming-soon"
+    status: "coming-soon",
+    fileSize: "32 MB",
+    requirements: "Windows 10/11 (64-bit)"
   },
   {
     id: 7,
@@ -63,7 +75,9 @@ const APPS = [
     desc: "Personalized productivity assistant with quick actions and shortcuts (Windows PC)",
     price: "17.99",
     icon: "🤖",
-    status: "coming-soon"
+    status: "coming-soon",
+    fileSize: "55 MB",
+    requirements: "Windows 10/11 (64-bit)"
   }
 ];
 
@@ -249,6 +263,21 @@ function openModal(appId) {
   document.getElementById("modalEmail").value = "";
   document.getElementById("modalNote").textContent = "";
   document.getElementById("buyNowBtn").disabled = false;
+
+  // Display app info (file size and requirements)
+  const appInfo = document.getElementById("appInfo");
+  if (appInfo && currentApp.fileSize && currentApp.requirements) {
+    appInfo.innerHTML = `
+      <div class="info-item">
+        <span class="info-label">📦 File Size:</span>
+        <span class="info-value">${currentApp.fileSize}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">💻 Requirements:</span>
+        <span class="info-value">${currentApp.requirements}</span>
+      </div>
+    `;
+  }
 
   // Fetch and display current pricing tier
   fetchAndDisplayPrice();

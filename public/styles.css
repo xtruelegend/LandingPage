@@ -557,6 +557,37 @@ body::before {
   margin-bottom: 20px;
 }
 
+.app-info {
+  background: #f5f8fa;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.info-item:not(:last-child) {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.info-label {
+  font-weight: 500;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.info-value {
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 14px;
+}
+
 .modal-price {
   font-size: 32px;
   font-weight: 700;
