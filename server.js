@@ -14,6 +14,46 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Redis/KV Store connection
+const KV_REST_API_URL = process.env.KV_REST_API_URL || "";
+const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN || "";
+
+const kvStore = {
+  async set(key, value) {
+    if (!KV_REST_API_URL || !KV_REST_API_TOKEN) return false;
+    try {
+      const response = await fetch(`${KV_REST_API_URL}/set/${key}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${KV_REST_API_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ value })
+      });
+      return response.ok;
+    } catch (err) {
+      console.error("KV set error:", err.message);
+      return false;
+    }
+  },
+  async get(key) {
+    if (!KV_REST_API_URL || !KV_REST_API_TOKEN) return null;
+    try {
+      const response = await fetch(`${KV_REST_API_URL}/get/${key}`, {
+        headers: {
+          Authorization: `Bearer ${KV_REST_API_TOKEN}`
+        }
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.result;
+    } catch (err) {
+      console.error("KV get error:", err.message);
+      return null;
+    }
+  }
+};
+
 const DATA_DIR = path.join(__dirname, "data");
 const KEYS_FILE = path.join(DATA_DIR, "keys.json");
 
@@ -174,22 +214,51 @@ async function getPooledLicenseKey() {
   return nextKey || null;
 }
 
-function saveLicenseKey(record) {
-  // On Vercel (serverless), we can't write to local filesystem
-  // In production, you'd send this to a database or remote endpoint
-  if (process.env.VERCEL) {
-    console.log("License key record (not saved locally on Vercel):", record);
+async function saveLicenseKey(record) {
+  // Store purchase in Redis for customer lookup
+  if (!record.email) {
+    console.warn("No email in record, skipping Redis storage");
     return;
   }
-  
-  // For local development only
+
   try {
-    ensureDataFile();
-    const existing = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
-    existing.push(record);
-    fs.writeFileSync(KEYS_FILE, JSON.stringify(existing, null, 2));
+    const normalizedEmail = record.email.toLowerCase().trim();
+    const purchases = await kvStore.get(`purchases:${normalizedEmail}`);
+    let purchasesList = [];
+
+    if (purchases) {
+      try {
+        purchasesList = typeof purchases === "string" ? JSON.parse(purchases) : Array.isArray(purchases) ? purchases : [];
+      } catch (e) {
+        console.error("Error parsing existing purchases:", e.message);
+        purchasesList = [];
+      }
+    }
+
+    const newPurchase = {
+      licenseKey: record.licenseKey,
+      product: record.product || "Unknown",
+      orderId: record.orderId,
+      date: record.createdAt || new Date().toISOString()
+    };
+
+    purchasesList.push(newPurchase);
+    await kvStore.set(`purchases:${normalizedEmail}`, JSON.stringify(purchasesList));
+    console.log(`Purchase saved for ${normalizedEmail} in Redis`);
   } catch (err) {
-    console.error("Warning: Could not save license key record:", err.message);
+    console.error("Error saving to Redis:", err.message);
+  }
+
+  // Also save locally for development (if not on Vercel)
+  if (!process.env.VERCEL) {
+    try {
+      ensureDataFile();
+      const existing = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
+      existing.push(record);
+      fs.writeFileSync(KEYS_FILE, JSON.stringify(existing, null, 2));
+    } catch (err) {
+      console.error("Warning: Could not save license key record:", err.message);
+    }
   }
 }
 
@@ -285,17 +354,28 @@ app.post("/api/lookup-purchases", async (req, res) => {
 
     const normalizedEmail = String(email).toLowerCase().trim();
 
-    // Try to find purchases in local records (development)
+    // First try Redis (production)
+    let purchasesData = await kvStore.get(`purchases:${normalizedEmail}`);
     let purchases = [];
-    
-    if (KEYS_FILE && fs.existsSync(KEYS_FILE)) {
+
+    if (purchasesData) {
+      try {
+        const parsed = typeof purchasesData === "string" ? JSON.parse(purchasesData) : purchasesData;
+        purchases = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.error("Error parsing Redis purchases:", e.message);
+      }
+    }
+
+    // Fallback: try local file (development only)
+    if (purchases.length === 0 && fs.existsSync(KEYS_FILE)) {
       try {
         const raw = fs.readFileSync(KEYS_FILE, "utf8");
         const records = JSON.parse(raw);
-        const matching = Array.isArray(records) 
+        const matching = Array.isArray(records)
           ? records.filter(r => r.email && String(r.email).toLowerCase().trim() === normalizedEmail)
           : [];
-        
+
         purchases = matching.map(r => ({
           email: r.email,
           product: r.product || "Unknown",
@@ -304,14 +384,14 @@ app.post("/api/lookup-purchases", async (req, res) => {
           orderId: r.orderId
         }));
       } catch (err) {
-        console.error("Error reading records:", err.message);
+        console.error("Error reading local records:", err.message);
       }
     }
 
     if (purchases.length === 0) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         found: false,
-        message: "No purchases found for this email. Please check if you used a different email address or contact support." 
+        message: "No purchases found for this email. Please check if you used a different email address or contact support."
       });
     }
 
