@@ -213,8 +213,21 @@
           </div>
 
           <div class="license-section">
+            <h2>✓ Verify License Key</h2>
+            <p>Already have your license key? Verify it here.</p>
+            <input
+              type="text"
+              id="licenseKeyInput"
+              class="license-input"
+              placeholder="XXXX-XXXX-XXXX-XXXX"
+            />
+            <button class="license-btn" onclick="verifyLicenseKey()">Verify License</button>
+            <div id="licenseResult" class="license-result"></div>
+          </div>
+
+          <div class="license-section" style="margin-top: 48px; padding-top: 48px; border-top: 2px solid var(--border);">
             <h2>🔍 Find Your Purchase</h2>
-            <p>Enter your email to look up your purchases and resend your license key.</p>
+            <p>Didn't receive your key? Enter your email to look up your purchases and resend your license key.</p>
             <input
               type="email"
               id="lookupEmail"
@@ -223,32 +236,6 @@
             />
             <button class="license-btn" onclick="lookupPurchases()">Find My Purchase</button>
             <div id="lookupResult" class="license-result"></div>
-          </div>
-
-          <div class="license-section" style="margin-top: 48px; padding-top: 48px; border-top: 2px solid var(--border);">
-            <h2>✓ Verify License Key</h2>
-            <p>Already have your license key? Verify it here.</p>
-            <input
-              type="text"
-              id="licenseKeyInput"
-              class="license-input"
-              placeholder="XXXX-XXXX-XXXX-XXXX"
-            />
-            <button class="license-btn" onclick="verifyLicenseKey()">Verify License</button>
-            <div id="licenseResult" class="license-result"></div>
-          </div>
-
-          <div class="license-section" style="margin-top: 48px; padding-top: 48px; border-top: 2px solid var(--border);">
-            <h2>✓ Verify License Key</h2>
-            <p>Already have your license key? Verify it here.</p>
-            <input
-              type="text"
-              id="licenseKeyInput"
-              class="license-input"
-              placeholder="XXXX-XXXX-XXXX-XXXX"
-            />
-            <button class="license-btn" onclick="verifyLicenseKey()">Verify License</button>
-            <div id="licenseResult" class="license-result"></div>
           </div>
         </section>
       </div>
@@ -356,9 +343,6 @@
           return;
         }
 
-        // Skip strict format validation and rely on backend verification
-
-        // Verify against backend
         resultDiv.className = "license-result";
         resultDiv.textContent = "Verifying...";
         resultDiv.style.display = "block";
@@ -373,17 +357,15 @@
           const data = await response.json();
 
           if (data.valid) {
-            // Valid key - show success and start download
             resultDiv.className = "license-result success";
             resultDiv.innerHTML = `
               <strong>✓ License Valid!</strong><br>
               Key: ${key.toUpperCase()}<br>
               Product: ${data.product}<br>
-              Email: ${data.email}<br><br>
+              Email: ${data.email || "N/A"}<br><br>
               <span style="font-size: 14px;">Your download is starting...</span>
             `;
 
-            // Start the download automatically
             setTimeout(() => {
               const link = document.createElement('a');
               link.href = '/downloads/BudgetXT-Setup-1.5.3.exe';
