@@ -195,17 +195,32 @@ async function getPooledLicenseKey() {
 
   if (!keysList.length) return null;
 
-  const issued = (() => {
-    try {
-      if (!fs.existsSync(KEYS_FILE)) return new Set();
+  // Get all issued keys from Redis (production) and local file (development)
+  const issued = new Set();
+  
+  // Check Redis for issued keys
+  try {
+    const redisIssuedKeys = await kvStore.get("issued_keys");
+    if (redisIssuedKeys) {
+      const parsedKeys = typeof redisIssuedKeys === "string" ? JSON.parse(redisIssuedKeys) : redisIssuedKeys;
+      if (Array.isArray(parsedKeys)) {
+        parsedKeys.forEach(key => issued.add(String(key).toUpperCase()));
+      }
+    }
+  } catch (e) {
+    console.error("Error reading issued keys from Redis:", e.message);
+  }
+  
+  // Also check local file (development fallback)
+  try {
+    if (fs.existsSync(KEYS_FILE)) {
       const raw = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
       const records = Array.isArray(raw) ? raw : [];
-      return new Set(records.map((record) => String(record.licenseKey || "").toUpperCase()));
-    } catch (e) {
-      console.error("Error reading issued keys:", e.message);
-      return new Set();
+      records.forEach(record => issued.add(String(record.licenseKey || "").toUpperCase()));
     }
-  })();
+  } catch (e) {
+    console.error("Error reading issued keys from file:", e.message);
+  }
 
   const nextKey = keysList
     .map((key) => String(key).toUpperCase())
@@ -245,6 +260,22 @@ async function saveLicenseKey(record) {
     purchasesList.push(newPurchase);
     await kvStore.set(`purchases:${normalizedEmail}`, JSON.stringify(purchasesList));
     console.log(`Purchase saved for ${normalizedEmail} in Redis`);
+    
+    // Track this key as issued globally to prevent duplicates
+    try {
+      const issuedKeys = await kvStore.get("issued_keys");
+      let keysList = [];
+      if (issuedKeys) {
+        keysList = typeof issuedKeys === "string" ? JSON.parse(issuedKeys) : Array.isArray(issuedKeys) ? issuedKeys : [];
+      }
+      if (!keysList.includes(record.licenseKey.toUpperCase())) {
+        keysList.push(record.licenseKey.toUpperCase());
+        await kvStore.set("issued_keys", JSON.stringify(keysList));
+        console.log(`License key ${record.licenseKey} marked as issued in Redis`);
+      }
+    } catch (err) {
+      console.error("Error tracking issued key in Redis:", err.message);
+    }
   } catch (err) {
     console.error("Error saving to Redis:", err.message);
   }

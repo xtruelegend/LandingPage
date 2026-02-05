@@ -258,7 +258,6 @@ function openModal(appId) {
 
   document.getElementById("modalTitle").textContent = currentApp.name;
   document.getElementById("modalDesc").textContent = currentApp.desc;
-  document.getElementById("modalVisual").textContent = currentApp.icon;
   document.getElementById("modalSuccess").classList.remove("active");
   document.getElementById("modalEmail").value = "";
   document.getElementById("modalNote").textContent = "";
