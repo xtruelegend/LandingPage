@@ -975,6 +975,10 @@ app.post("/api/submit-review", async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
 
+    if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
+      return res.status(500).json({ error: "Review storage not configured" });
+    }
+
     if (rating < 1 || rating > 5) {
       return res.status(400).json({ error: "Rating must be between 1 and 5" });
     }
@@ -1001,7 +1005,10 @@ app.post("/api/submit-review", async (req, res) => {
     }
 
     pendingReviews.push(review);
-    await kvStore.set("pending_reviews", JSON.stringify(pendingReviews));
+    const saved = await kvStore.set("pending_reviews", JSON.stringify(pendingReviews));
+    if (!saved) {
+      return res.status(500).json({ error: "Failed to save review" });
+    }
     console.log(`New review submitted by ${name}`);
 
     res.json({ success: true, message: "Review submitted successfully" });

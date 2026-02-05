@@ -120,6 +120,28 @@
         margin-bottom: 24px;
       }
 
+      .review-section {
+        background: var(--bg-light);
+        border-radius: 12px;
+        padding: 32px;
+        margin: 40px auto;
+        max-width: 700px;
+      }
+
+      #starRating {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+      }
+
+      .star {
+        transition: transform 0.1s ease;
+      }
+
+      .star:hover {
+        transform: scale(1.1);
+      }
+
       .license-input {
         width: 100%;
         padding: 12px 16px;
@@ -242,10 +264,9 @@
     </main>
 
     <!-- Leave a Review Section -->
-    <div class="container" style="margin-top: 40px; margin-bottom: 40px;">
-      <section class="card">
-        <h2>⭐ Leave a Review</h2>
-        <p style="color: #666; margin-bottom: 20px;">Help others discover our tools! Share your experience with BudgetXT.</p>
+    <div class="review-section">
+      <h2>⭐ Leave a Review</h2>
+      <p style="color: #666; margin-bottom: 20px;">Help others discover our tools! Share your experience with BudgetXT.</p>
         
         <form id="reviewForm" style="max-width: 600px;">
           <div style="margin-bottom: 16px;">
@@ -278,8 +299,7 @@
           <button type="submit" style="padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Submit Review</button>
         </form>
         
-        <div id="reviewResult" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
-      </section>
+      <div id="reviewResult" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
     </div>
 
     <footer class="footer">
