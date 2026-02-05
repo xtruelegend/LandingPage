@@ -1,22 +1,6 @@
 const APPS = [
   {
     id: 1,
-    name: "Pro Studio",
-    desc: "Advanced editing and automation tools for creative professionals",
-    price: "29.99",
-    icon: "🎨",
-    status: "coming-soon"
-  },
-  {
-    id: 2,
-    name: "Dev Toolkit",
-    desc: "Essential utilities for modern software development workflows",
-    price: "19.99",
-    icon: "💻",
-    status: "coming-soon"
-  },
-  {
-    id: 3,
     name: "BudgetXT",
     desc: "Simple, powerful budget tracking and financial planning for everyday use",
     price: "14.99",
@@ -24,43 +8,51 @@ const APPS = [
     status: "available"
   },
   {
+    id: 2,
+    name: "AgendaXT",
+    desc: "Smart daily planning with focus blocks, reminders, and clean schedules",
+    price: "19.99",
+    icon: "🗓️",
+    status: "coming-soon"
+  },
+  {
+    id: 3,
+    name: "InventoryXT",
+    desc: "Simple inventory tracking with low-stock alerts and quick exports",
+    price: "29.99",
+    icon: "📦",
+    status: "coming-soon"
+  },
+  {
     id: 4,
-    name: "Atlas AI",
-    desc: "Smart assistant for planning, research, and summaries",
-    price: "24.99",
-    icon: "🤖",
+    name: "FileSorterXT",
+    desc: "Organize files automatically with rules, tags, and smart cleanup",
+    price: "14.99",
+    icon: "🗂️",
     status: "coming-soon"
   },
   {
     id: 5,
-    name: "Signal Mesh",
-    desc: "Realtime monitoring and alerts for critical workflows",
-    price: "17.99",
-    icon: "📡",
+    name: "BookedXT",
+    desc: "Client booking, calendar sync, and payments in one place",
+    price: "24.99",
+    icon: "📅",
     status: "coming-soon"
   },
   {
     id: 6,
-    name: "Neural Notes",
-    desc: "Organize ideas with AI tagging and quick capture",
+    name: "PanicXT",
+    desc: "Instant emergency checklists and one-tap safety actions",
     price: "11.99",
-    icon: "🧠",
+    icon: "🚨",
     status: "coming-soon"
   },
   {
     id: 7,
-    name: "Flux Renderer",
-    desc: "High-performance export pipeline for creators",
-    price: "21.99",
-    icon: "⚙️",
-    status: "coming-soon"
-  },
-  {
-    id: 8,
-    name: "Pulse Tracker",
-    desc: "Live analytics dashboard with alerts and insights",
-    price: "16.99",
-    icon: "📈",
+    name: "RoccoXT",
+    desc: "Personalized productivity assistant with quick actions and shortcuts",
+    price: "17.99",
+    icon: "🤖",
     status: "coming-soon"
   }
 ];
