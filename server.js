@@ -236,14 +236,25 @@ async function saveLicenseKey(record) {
     return;
   }
 
+  console.log(`[saveLicenseKey] Saving purchase for ${record.email}:`, {
+    licenseKey: record.licenseKey,
+    product: record.product,
+    orderId: record.orderId
+  });
+
   try {
     const normalizedEmail = record.email.toLowerCase().trim();
+    console.log(`[saveLicenseKey] Normalized email: ${normalizedEmail}`);
+    
     const purchases = await kvStore.get(`purchases:${normalizedEmail}`);
+    console.log(`[saveLicenseKey] Existing purchases from Redis:`, purchases);
+    
     let purchasesList = [];
 
     if (purchases) {
       try {
         purchasesList = typeof purchases === "string" ? JSON.parse(purchases) : Array.isArray(purchases) ? purchases : [];
+        console.log(`[saveLicenseKey] Parsed existing purchases, count: ${purchasesList.length}`);
       } catch (e) {
         console.error("Error parsing existing purchases:", e.message);
         purchasesList = [];
@@ -384,9 +395,11 @@ app.post("/api/lookup-purchases", async (req, res) => {
     }
 
     const normalizedEmail = String(email).toLowerCase().trim();
+    console.log(`[lookup-purchases] Looking up purchases for: ${normalizedEmail}`);
 
     // First try Redis (production)
     let purchasesData = await kvStore.get(`purchases:${normalizedEmail}`);
+    console.log(`[lookup-purchases] Redis data:`, purchasesData);
     let purchases = [];
 
     if (purchasesData) {
@@ -726,7 +739,7 @@ app.post("/api/orders/:orderID/capture", async (req, res) => {
       return res.status(500).json({ error: "No license keys available" });
     }
 
-    saveLicenseKey({
+    await saveLicenseKey({
       orderId: orderID,
       email: desiredEmail,
       licenseKey,
