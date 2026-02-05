@@ -99,14 +99,10 @@ body::before {
 }
 
 .hero .container {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
   align-items: center;
-}
-
-.hero-content {
-  text-align: center;
-  max-width: 700px;
 }
 
 .hero-title {
@@ -114,8 +110,6 @@ body::before {
   font-weight: 700;
   line-height: 1.1;
   margin-bottom: 24px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .hero-desc {
@@ -123,8 +117,6 @@ body::before {
   color: var(--text-light);
   margin-bottom: 32px;
   max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .btn-primary {
