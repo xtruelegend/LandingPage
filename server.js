@@ -275,6 +275,81 @@ app.get("/api/config", (req, res) => {
   });
 });
 
+app.post("/api/resend-key", async (req, res) => {
+  try {
+    const { email, licenseKey, appName } = req.body;
+
+    if (!email || !licenseKey) {
+      return res.status(400).json({ error: "Email and license key are required" });
+    }
+
+    if (!appName) {
+      return res.status(400).json({ error: "App name is required" });
+    }
+
+    // Validate the license key exists in pool
+    const payload = await (async () => {
+      if (KEYS_LOCAL_PATH && fs.existsSync(KEYS_LOCAL_PATH)) {
+        try {
+          const raw = await fs.promises.readFile(KEYS_LOCAL_PATH, "utf8");
+          return JSON.parse(raw);
+        } catch (e) {
+          console.error("Error reading KEYS_LOCAL_PATH:", e.message);
+        }
+      }
+      if (KEYS_REMOTE_URL) {
+        try {
+          const response = await fetch(KEYS_REMOTE_URL);
+          if (!response.ok) return null;
+          return response.json();
+        } catch (e) {
+          console.error("Error fetching KEYS_REMOTE_URL:", e.message);
+        }
+      }
+      return null;
+    })();
+
+    let keysList = [];
+    if (Array.isArray(payload)) {
+      keysList = payload;
+    } else if (Array.isArray(payload?.keys)) {
+      keysList = payload.keys;
+    }
+
+    const keyExists = keysList.some(
+      (key) => String(key).toUpperCase() === String(licenseKey).toUpperCase()
+    );
+
+    if (!keyExists) {
+      return res.status(400).json({ error: "License key not found in valid keys pool" });
+    }
+
+    // Send the email
+    const emailResult = await sendKeyEmail(email, licenseKey, appName);
+
+    if (emailResult?.skipped) {
+      return res.status(500).json({ 
+        error: "Email service not configured. SMTP credentials missing.",
+        success: false
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "License key email resent successfully",
+      email,
+      appName,
+      messageId: emailResult?.messageId
+    });
+  } catch (error) {
+    console.error("Resend key error:", error);
+    res.status(500).json({ 
+      error: error.message,
+      success: false
+    });
+  }
+});
+
 app.post("/api/verify-key", async (req, res) => {
   try {
     const { key } = req.body;
