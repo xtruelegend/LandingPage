@@ -1334,6 +1334,153 @@ app.post("/api/admin/delete-approved-review", async (req, res) => {
   }
 });
 
+// Admin: Rotate all issued keys and replace in purchase records
+app.post("/api/admin/rotate-keys", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    if (!HAS_REDIS) {
+      return res.status(500).json({ error: "Redis URL not configured" });
+    }
+
+    const { sendEmails } = req.body || {};
+
+    // Load full key pool
+    const loadKeysPayload = async () => {
+      if (KEYS_LOCAL_PATH && fs.existsSync(KEYS_LOCAL_PATH)) {
+        try {
+          const raw = await fs.promises.readFile(KEYS_LOCAL_PATH, "utf8");
+          return JSON.parse(raw);
+        } catch (e) {
+          console.error("Error reading KEYS_LOCAL_PATH:", e.message);
+        }
+      }
+
+      if (KEYS_REMOTE_URL) {
+        try {
+          const response = await fetch(KEYS_REMOTE_URL);
+          if (!response.ok) return null;
+          return response.json();
+        } catch (e) {
+          console.error("Error fetching KEYS_REMOTE_URL:", e.message);
+        }
+      }
+
+      return null;
+    };
+
+    const payload = await loadKeysPayload();
+    if (!payload) {
+      return res.status(500).json({ error: "Failed to load key pool" });
+    }
+
+    let keysList = [];
+    if (Array.isArray(payload)) {
+      keysList = payload;
+    } else if (Array.isArray(payload.keys)) {
+      keysList = payload.keys;
+    }
+
+    if (!keysList.length) {
+      return res.status(500).json({ error: "Key pool is empty" });
+    }
+
+    const redis = await getRedisClient();
+    if (!redis) {
+      return res.status(500).json({ error: "Redis connection failed" });
+    }
+
+    // Get all purchase records
+    const purchaseKeys = await redis.keys("purchases:*");
+    if (!purchaseKeys.length) {
+      return res.json({ success: true, message: "No purchases found to rotate" });
+    }
+
+    // Old issued set to avoid reusing old keys
+    const oldIssuedRaw = await redis.get("issued_keys");
+    const oldIssuedList = oldIssuedRaw ? JSON.parse(oldIssuedRaw) : [];
+    const oldIssuedSet = new Set(oldIssuedList.map((k) => String(k).toUpperCase()));
+
+    const available = keysList
+      .map((k) => String(k).toUpperCase())
+      .filter((k) => k && !oldIssuedSet.has(k));
+
+    // Count total purchases
+    let totalPurchases = 0;
+    const purchasesByKey = [];
+    for (const key of purchaseKeys) {
+      const raw = await redis.get(key);
+      const list = raw ? JSON.parse(raw) : [];
+      const email = key.replace("purchases:", "");
+      list.forEach((p) => {
+        purchasesByKey.push({
+          email,
+          product: p.product || "Unknown",
+          orderId: p.orderId,
+          date: p.date || p.createdAt,
+          oldKey: p.licenseKey
+        });
+      });
+      totalPurchases += list.length;
+    }
+
+    if (available.length < totalPurchases) {
+      return res.status(500).json({
+        error: `Not enough unused keys to rotate. Need ${totalPurchases}, have ${available.length}.`
+      });
+    }
+
+    // Assign new keys
+    let idx = 0;
+    const newIssued = [];
+    const updatedByEmail = {};
+
+    for (const purchase of purchasesByKey) {
+      const newKey = available[idx++];
+      newIssued.push(newKey);
+
+      if (!updatedByEmail[purchase.email]) {
+        updatedByEmail[purchase.email] = [];
+      }
+
+      updatedByEmail[purchase.email].push({
+        email: purchase.email,
+        licenseKey: newKey,
+        product: purchase.product,
+        orderId: purchase.orderId,
+        date: purchase.date
+      });
+    }
+
+    // Write updated purchases
+    for (const email of Object.keys(updatedByEmail)) {
+      await redis.set(`purchases:${email}`, JSON.stringify(updatedByEmail[email]));
+    }
+
+    // Replace issued_keys
+    await redis.set("issued_keys", JSON.stringify(newIssued));
+
+    // Optionally email customers
+    if (sendEmails) {
+      for (const email of Object.keys(updatedByEmail)) {
+        for (const p of updatedByEmail[email]) {
+          await sendKeyEmail(email, p.licenseKey, p.product || "Unknown");
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      rotated: totalPurchases,
+      emailsSent: Boolean(sendEmails)
+    });
+  } catch (error) {
+    console.error("Rotate keys error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

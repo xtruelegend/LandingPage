@@ -142,6 +142,18 @@
         <button class="btn btn-logout" onclick="logout()">Logout</button>
       </div>
 
+      <!-- Rotate Keys -->
+      <div class="admin-section">
+        <h2>🔁 Replace All Issued Keys</h2>
+        <p style="color: #666; margin-bottom: 20px;">This replaces every issued key with a brand-new unused key from your pool.</p>
+        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <input type="checkbox" id="rotateSendEmails" />
+          <span>Send updated keys to customers by email</span>
+        </label>
+        <button class="btn btn-primary" onclick="rotateKeys()">Run Key Replacement</button>
+        <div id="rotateResult" style="margin-top: 12px;"></div>
+      </div>
+
       <!-- Manual Key Sending -->
       <div class="admin-section">
         <h2>📧 Send License Key Manually</h2>
@@ -533,6 +545,38 @@
         } catch (error) {
           alert('Error updating review');
           console.error('Update review error:', error);
+        }
+      }
+
+      async function rotateKeys() {
+        const resultDiv = document.getElementById('rotateResult');
+        const sendEmails = document.getElementById('rotateSendEmails').checked;
+        if (!confirm('This will replace ALL issued keys. Continue?')) return;
+
+        resultDiv.innerHTML = '<p>Replacing keys...</p>';
+
+        try {
+          const response = await fetch('/api/admin/rotate-keys', {
+            method: 'POST',
+            headers: adminHeaders(),
+            body: JSON.stringify({ sendEmails })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            resultDiv.innerHTML = `
+              <div class="success-message">
+                ✓ Rotated ${data.rotated} key(s). Emails sent: ${data.emailsSent ? 'Yes' : 'No'}
+              </div>
+            `;
+          } else {
+            resultDiv.innerHTML = `
+              <div class="error-message">✗ ${data.error || 'Failed to rotate keys'}</div>
+            `;
+          }
+        } catch (error) {
+          resultDiv.innerHTML = '<div class="error-message">✗ Failed to rotate keys</div>';
         }
       }
       
