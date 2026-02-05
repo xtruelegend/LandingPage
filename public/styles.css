@@ -105,6 +105,13 @@ body::before {
   align-items: center;
 }
 
+.hero .container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
 .hero-title {
   font-size: 56px;
   font-weight: 700;
