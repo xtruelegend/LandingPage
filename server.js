@@ -334,6 +334,7 @@ async function saveLicenseKey(record) {
     }
 
     const newPurchase = {
+      email: record.email,
       licenseKey: record.licenseKey,
       product: record.product || "Unknown",
       orderId: record.orderId,
@@ -477,7 +478,13 @@ app.post("/api/lookup-purchases", async (req, res) => {
     if (purchasesData) {
       try {
         const parsed = typeof purchasesData === "string" ? JSON.parse(purchasesData) : purchasesData;
-        purchases = Array.isArray(parsed) ? parsed : [];
+        purchases = Array.isArray(parsed) ? parsed.map((p) => ({
+          email: p.email || normalizedEmail,
+          product: p.product || "Unknown",
+          licenseKey: p.licenseKey,
+          createdAt: p.date || p.createdAt,
+          orderId: p.orderId
+        })) : [];
       } catch (e) {
         console.error("Error parsing Redis purchases:", e.message);
       }

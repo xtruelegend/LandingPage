@@ -337,12 +337,13 @@
             resultDiv.className = "license-result success";
             let html = `<strong>✓ Found ${data.purchases.length} Purchase(s)!</strong><br><br>`;
             
+            const lookupEmail = email;
             data.purchases.forEach((purchase, idx) => {
               html += `
                 <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid var(--primary);">
                   <strong>${purchase.product}</strong><br>
                   <small style="color: #666;">Order Date: ${new Date(purchase.date || purchase.createdAt).toLocaleDateString()}</small><br>
-                  <button onclick="quickResend('${purchase.email}', '${purchase.licenseKey}', '${purchase.product}')" style="margin-top: 8px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">📧 Resend License Key to Email</button>
+                  <button onclick="quickResend('${lookupEmail}', '${purchase.licenseKey}', '${purchase.product}')" style="margin-top: 8px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">📧 Resend License Key to Email</button>
                 </div>
               `;
             });
