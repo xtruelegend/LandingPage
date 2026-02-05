@@ -241,6 +241,47 @@
       </div>
     </main>
 
+    <!-- Leave a Review Section -->
+    <div class="container" style="margin-top: 40px; margin-bottom: 40px;">
+      <section class="card">
+        <h2>⭐ Leave a Review</h2>
+        <p style="color: #666; margin-bottom: 20px;">Help others discover our tools! Share your experience with BudgetXT.</p>
+        
+        <form id="reviewForm" style="max-width: 600px;">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 500; margin-bottom: 8px;">Your Name</label>
+            <input type="text" id="reviewName" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+          </div>
+          
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 500; margin-bottom: 8px;">Email (not displayed publicly)</label>
+            <input type="email" id="reviewEmail" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+          </div>
+          
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 500; margin-bottom: 8px;">Rating</label>
+            <div id="starRating" style="font-size: 32px; cursor: pointer;">
+              <span class="star" data-rating="1">☆</span>
+              <span class="star" data-rating="2">☆</span>
+              <span class="star" data-rating="3">☆</span>
+              <span class="star" data-rating="4">☆</span>
+              <span class="star" data-rating="5">☆</span>
+            </div>
+            <input type="hidden" id="reviewRating" required>
+          </div>
+          
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-weight: 500; margin-bottom: 8px;">Your Review</label>
+            <textarea id="reviewText" required rows="4" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+          </div>
+          
+          <button type="submit" style="padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Submit Review</button>
+        </form>
+        
+        <div id="reviewResult" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
+      </section>
+    </div>
+
     <footer class="footer">
       <div class="container">
         <p>© 2026 TechApps. All rights reserved.</p>
@@ -390,6 +431,79 @@
       // Allow Enter key to verify
       document.getElementById("licenseKeyInput").addEventListener("keypress", function(e) {
         if (e.key === "Enter") verifyLicenseKey();
+      });
+
+      // Star rating system
+      let selectedRating = 0;
+      const stars = document.querySelectorAll('.star');
+      stars.forEach(star => {
+        star.addEventListener('click', function() {
+          selectedRating = parseInt(this.dataset.rating);
+          document.getElementById('reviewRating').value = selectedRating;
+          updateStars();
+        });
+        star.addEventListener('mouseenter', function() {
+          const rating = parseInt(this.dataset.rating);
+          stars.forEach((s, idx) => {
+            s.textContent = idx < rating ? '★' : '☆';
+          });
+        });
+      });
+      
+      document.getElementById('starRating').addEventListener('mouseleave', updateStars);
+      
+      function updateStars() {
+        stars.forEach((s, idx) => {
+          s.textContent = idx < selectedRating ? '★' : '☆';
+          s.style.color = idx < selectedRating ? '#ffc107' : '#ddd';
+        });
+      }
+
+      // Review form submission
+      document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const resultDiv = document.getElementById('reviewResult');
+        const name = document.getElementById('reviewName').value.trim();
+        const email = document.getElementById('reviewEmail').value.trim();
+        const rating = parseInt(document.getElementById('reviewRating').value);
+        const text = document.getElementById('reviewText').value.trim();
+        
+        if (!rating) {
+          resultDiv.className = 'license-result error';
+          resultDiv.style.display = 'block';
+          resultDiv.textContent = 'Please select a star rating';
+          return;
+        }
+        
+        resultDiv.textContent = 'Submitting review...';
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'license-result';
+        
+        try {
+          const response = await fetch('/api/submit-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, rating, text })
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok) {
+            resultDiv.className = 'license-result success';
+            resultDiv.textContent = '✓ Thank you! Your review has been submitted and will appear after approval.';
+            document.getElementById('reviewForm').reset();
+            selectedRating = 0;
+            updateStars();
+          } else {
+            resultDiv.className = 'license-result error';
+            resultDiv.textContent = '✗ ' + (data.error || 'Failed to submit review');
+          }
+        } catch (error) {
+          resultDiv.className = 'license-result error';
+          resultDiv.textContent = 'Error submitting review. Please try again.';
+          console.error('Review error:', error);
+        }
       });
     </script>
   </body>

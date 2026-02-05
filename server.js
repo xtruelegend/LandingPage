@@ -866,6 +866,152 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
 
+// Submit review endpoint
+app.post("/api/submit-review", async (req, res) => {
+  try {
+    const { name, email, rating, text } = req.body;
+
+    if (!name || !email || !rating || !text) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be between 1 and 5" });
+    }
+
+    const review = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      rating: parseInt(rating),
+      text: text.trim(),
+      date: new Date().toISOString(),
+      approved: false
+    };
+
+    // Get existing pending reviews
+    let pendingReviews = [];
+    try {
+      const reviews = await kvStore.get("pending_reviews");
+      if (reviews) {
+        pendingReviews = typeof reviews === "string" ? JSON.parse(reviews) : Array.isArray(reviews) ? reviews : [];
+      }
+    } catch (e) {
+      console.error("Error loading pending reviews:", e.message);
+    }
+
+    pendingReviews.push(review);
+    await kvStore.set("pending_reviews", JSON.stringify(pendingReviews));
+    console.log(`New review submitted by ${name}`);
+
+    res.json({ success: true, message: "Review submitted successfully" });
+  } catch (error) {
+    console.error("Submit review error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get approved reviews endpoint
+app.get("/api/reviews", async (req, res) => {
+  try {
+    let approvedReviews = [];
+    const reviews = await kvStore.get("approved_reviews");
+    if (reviews) {
+      approvedReviews = typeof reviews === "string" ? JSON.parse(reviews) : Array.isArray(reviews) ? reviews : [];
+    }
+    res.json({ reviews: approvedReviews });
+  } catch (error) {
+    console.error("Get reviews error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Get pending reviews
+app.get("/api/admin/pending-reviews", async (req, res) => {
+  try {
+    let pendingReviews = [];
+    const reviews = await kvStore.get("pending_reviews");
+    if (reviews) {
+      pendingReviews = typeof reviews === "string" ? JSON.parse(reviews) : Array.isArray(reviews) ? reviews : [];
+    }
+    res.json({ reviews: pendingReviews });
+  } catch (error) {
+    console.error("Get pending reviews error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Approve review
+app.post("/api/admin/approve-review", async (req, res) => {
+  try {
+    const { reviewId } = req.body;
+    if (!reviewId) {
+      return res.status(400).json({ error: "Review ID required" });
+    }
+
+    // Get pending reviews
+    let pendingReviews = [];
+    const pending = await kvStore.get("pending_reviews");
+    if (pending) {
+      pendingReviews = typeof pending === "string" ? JSON.parse(pending) : Array.isArray(pending) ? pending : [];
+    }
+
+    // Find and remove the review
+    const reviewIndex = pendingReviews.findIndex(r => r.id === reviewId);
+    if (reviewIndex === -1) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+
+    const [approvedReview] = pendingReviews.splice(reviewIndex, 1);
+    approvedReview.approved = true;
+
+    // Update pending reviews
+    await kvStore.set("pending_reviews", JSON.stringify(pendingReviews));
+
+    // Add to approved reviews
+    let approvedReviews = [];
+    const approved = await kvStore.get("approved_reviews");
+    if (approved) {
+      approvedReviews = typeof approved === "string" ? JSON.parse(approved) : Array.isArray(approved) ? approved : [];
+    }
+    approvedReviews.push(approvedReview);
+    await kvStore.set("approved_reviews", JSON.stringify(approvedReviews));
+
+    console.log(`Review ${reviewId} approved`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Approve review error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Delete review
+app.post("/api/admin/delete-review", async (req, res) => {
+  try {
+    const { reviewId } = req.body;
+    if (!reviewId) {
+      return res.status(400).json({ error: "Review ID required" });
+    }
+
+    // Get pending reviews
+    let pendingReviews = [];
+    const pending = await kvStore.get("pending_reviews");
+    if (pending) {
+      pendingReviews = typeof pending === "string" ? JSON.parse(pending) : Array.isArray(pending) ? pending : [];
+    }
+
+    // Remove the review
+    const filteredReviews = pendingReviews.filter(r => r.id !== reviewId);
+    await kvStore.set("pending_reviews", JSON.stringify(filteredReviews));
+
+    console.log(`Review ${reviewId} deleted`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete review error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

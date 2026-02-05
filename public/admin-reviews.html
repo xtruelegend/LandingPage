@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Review Moderation</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .admin-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      .review-item {
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .review-stars {
+        color: #ffc107;
+        font-size: 20px;
+      }
+      .review-text {
+        background: #f5f8fa;
+        padding: 16px;
+        border-radius: 8px;
+        margin: 12px 0;
+        line-height: 1.6;
+      }
+      .review-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .btn-approve {
+        background: #34c759;
+        color: white;
+      }
+      .btn-delete {
+        background: #ff3b30;
+        color: white;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-container">
+      <h1>Review Moderation</h1>
+      <p style="color: #666; margin-bottom: 30px;">Approve or delete customer reviews before they appear on the website.</p>
+      
+      <div id="reviewsContainer"></div>
+    </div>
+
+    <script>
+      async function loadPendingReviews() {
+        const container = document.getElementById('reviewsContainer');
+        container.innerHTML = '<p style="text-align: center;">Loading reviews...</p>';
+        
+        try {
+          const response = await fetch('/api/admin/pending-reviews');
+          const data = await response.json();
+          
+          if (data.reviews.length === 0) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <div style="font-size: 64px; margin-bottom: 16px;">📭</div>
+                <h3>No Pending Reviews</h3>
+                <p>All caught up! New reviews will appear here for moderation.</p>
+              </div>
+            `;
+            return;
+          }
+          
+          container.innerHTML = data.reviews.map(review => `
+            <div class="review-item" id="review-${review.id}">
+              <div class="review-header">
+                <div>
+                  <strong>${review.name}</strong>
+                  <br>
+                  <small style="color: #666;">${review.email} • ${new Date(review.date).toLocaleDateString()}</small>
+                </div>
+                <div class="review-stars">
+                  ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                </div>
+              </div>
+              <div class="review-text">
+                "${review.text}"
+              </div>
+              <div class="review-actions">
+                <button class="btn btn-approve" onclick="approveReview('${review.id}')">
+                  ✓ Approve & Publish
+                </button>
+                <button class="btn btn-delete" onclick="deleteReview('${review.id}')">
+                  ✗ Delete
+                </button>
+              </div>
+            </div>
+          `).join('');
+        } catch (error) {
+          container.innerHTML = '<p style="color: red;">Error loading reviews. Please try again.</p>';
+          console.error('Load error:', error);
+        }
+      }
+      
+      async function approveReview(reviewId) {
+        if (!confirm('Approve this review and publish it on the website?')) return;
+        
+        try {
+          const response = await fetch('/api/admin/approve-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewId })
+          });
+          
+          if (response.ok) {
+            document.getElementById(`review-${reviewId}`).remove();
+            if (document.querySelectorAll('.review-item').length === 0) {
+              loadPendingReviews();
+            }
+          } else {
+            alert('Error approving review');
+          }
+        } catch (error) {
+          alert('Error approving review');
+          console.error('Approve error:', error);
+        }
+      }
+      
+      async function deleteReview(reviewId) {
+        if (!confirm('Delete this review permanently?')) return;
+        
+        try {
+          const response = await fetch('/api/admin/delete-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewId })
+          });
+          
+          if (response.ok) {
+            document.getElementById(`review-${reviewId}`).remove();
+            if (document.querySelectorAll('.review-item').length === 0) {
+              loadPendingReviews();
+            }
+          } else {
+            alert('Error deleting review');
+          }
+        } catch (error) {
+          alert('Error deleting review');
+          console.error('Delete error:', error);
+        }
+      }
+      
+      // Load reviews on page load
+      loadPendingReviews();
+      
+      // Auto-refresh every 30 seconds
+      setInterval(loadPendingReviews, 30000);
+    </script>
+  </body>
+</html>

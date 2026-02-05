@@ -376,6 +376,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderApps();
   }
 
+  // Load real user reviews
+  loadReviews();
+
   createPetals();
   initCursorTrail();
 
@@ -465,5 +468,39 @@ function initCursorTrail() {
     requestAnimationFrame(animate);
   }
 
-  animate();
+async function loadReviews() {
+  try {
+    const response = await fetch('/api/reviews');
+    const data = await response.json();
+    
+    if (data.reviews && data.reviews.length > 0) {
+      const grid = document.getElementById('testimonialsGrid');
+      if (!grid) return;
+      
+      // Add real reviews to the grid (keeping default ones and adding new ones)
+      data.reviews.forEach(review => {
+        const avatars = ['👨', '👩', '🧑', '👴', '👵'];
+        const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
+        const stars = '⭐'.repeat(review.rating);
+        
+        const card = document.createElement('div');
+        card.className = 'testimonial-card';
+        card.innerHTML = `
+          <div class="testimonial-stars" style="color: #ffc107; margin-bottom: 8px;">${stars}</div>
+          <p class="testimonial-text">"${review.text}"</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">${randomAvatar}</div>
+            <div class="testimonial-info">
+              <h4>${review.name}</h4>
+              <p>${new Date(review.date).toLocaleDateString()}</p>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+  } catch (error) {
+    console.error('Error loading reviews:', error);
+  }
+}
 }
