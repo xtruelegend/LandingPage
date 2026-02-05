@@ -159,33 +159,50 @@ app.post("/api/verify-key", async (req, res) => {
 
     const remoteMatchesKey = async () => {
       if (KEYS_VALIDATE_URL) {
-        const response = await fetch(KEYS_VALIDATE_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: normalizedKey })
-        });
+        try {
+          const response = await fetch(KEYS_VALIDATE_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: normalizedKey })
+          });
 
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || !payload?.valid) return null;
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || !payload?.valid) return null;
 
-        return {
-          valid: true,
-          email: null,
-          product: "BudgetXT",
-          timestamp: null
-        };
+          return {
+            valid: true,
+            email: null,
+            product: "BudgetXT",
+            timestamp: null
+          };
+        } catch (e) {
+          console.error("KEYS_VALIDATE_URL error:", e.message);
+        }
       }
 
       const loadKeysPayload = async () => {
+        // Try local file first (development)
         if (KEYS_LOCAL_PATH && fs.existsSync(KEYS_LOCAL_PATH)) {
-          const raw = await fs.promises.readFile(KEYS_LOCAL_PATH, "utf8");
-          return JSON.parse(raw);
+          try {
+            const raw = await fs.promises.readFile(KEYS_LOCAL_PATH, "utf8");
+            return JSON.parse(raw);
+          } catch (e) {
+            console.error("Error reading KEYS_LOCAL_PATH:", e.message);
+          }
         }
 
-        if (!KEYS_REMOTE_URL) return null;
-        const response = await fetch(KEYS_REMOTE_URL);
-        if (!response.ok) return null;
-        return response.json();
+        // Try remote URL (production)
+        if (KEYS_REMOTE_URL) {
+          try {
+            const response = await fetch(KEYS_REMOTE_URL);
+            if (!response.ok) return null;
+            return response.json();
+          } catch (e) {
+            console.error("Error fetching KEYS_REMOTE_URL:", e.message);
+          }
+        }
+
+        return null;
       };
 
       const payload = await loadKeysPayload();
