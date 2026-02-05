@@ -181,7 +181,15 @@ function saveLicenseKey(record) {
   fs.writeFileSync(KEYS_FILE, JSON.stringify(existing, null, 2));
 }
 
-async function sendKeyEmail(to, licenseKey, appName) {
+// Map app names to their download files
+const APP_DOWNLOADS = {
+  "BudgetXT": "BudgetXT-Setup-1.5.3.exe",
+  "budgetxt": "BudgetXT-Setup-1.5.3.exe"
+  // Add more apps here as you build them
+  // "AppName": "AppName-Setup-1.0.0.exe"
+};
+
+async function sendKeyEmail(to, licenseKey, appName, orderDetails = {}) {
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !SMTP_FROM || !to) {
     return { skipped: true };
   }
@@ -196,19 +204,50 @@ async function sendKeyEmail(to, licenseKey, appName) {
     }
   });
 
+  // Get the download file for this app
+  const downloadFile = APP_DOWNLOADS[appName] || "BudgetXT-Setup-1.5.3.exe";
+  const downloadUrl = `https://techapps.vercel.app/downloads/${downloadFile}`;
+  const purchaseDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
   const info = await transporter.sendMail({
     from: SMTP_FROM,
     to,
-    subject: `Your ${appName} License Key`,
-    text: `Thanks for your purchase!\n\nHere is your license key: ${licenseKey}\n\nDownload your app at: http://localhost:3000/downloads/BudgetXT-Setup-1.5.3.exe\n\nIf you need help, just reply to this email.`,
+    subject: `Your ${appName} License Key & Receipt`,
+    text: `Thanks for your purchase!\n\nOrder Confirmation\n=================\nApp: ${appName}\nLicense Key: ${licenseKey}\nDate: ${purchaseDate}\n\nDownload: ${downloadUrl}\n\nQuestions? Reply to this email.`,
     html: `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-        <h2>Thanks for your purchase!</h2>
-        <p>Here is your <strong>${appName}</strong> license key:</p>
-        <p style="font-size:20px;font-weight:bold;padding:16px;background:#f5f5f5;border-radius:8px;">${licenseKey}</p>
-        <p style="margin-top:24px;"><strong>Download Your App:</strong></p>
-        <p><a href="http://localhost:3000/downloads/BudgetXT-Setup-1.5.3.exe" style="background:#00d1ff;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;">Download BudgetXT</a></p>
-        <p style="margin-top:24px;color:#666;font-size:14px;">If you need help, just reply to this email.</p>
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+        <div style="background: linear-gradient(135deg, #00d1ff 0%, #0099cc 100%); color: white; padding: 32px; border-radius: 8px 8px 0 0; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px;">✓ Purchase Confirmed</h1>
+          <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Thank you for your purchase!</p>
+        </div>
+        
+        <div style="background: #f9f9f9; padding: 32px; border-radius: 0 0 8px 8px;">
+          <h2 style="color: #333; margin-top: 0;">Order Details</h2>
+          
+          <div style="background: white; padding: 20px; border-radius: 6px; margin: 16px 0; border-left: 4px solid #00d1ff;">
+            <p style="margin: 8px 0;"><strong>Product:</strong> ${appName}</p>
+            <p style="margin: 8px 0;"><strong>Purchase Date:</strong> ${purchaseDate}</p>
+            <p style="margin: 8px 0;"><strong>Email:</strong> ${to}</p>
+          </div>
+
+          <h2 style="color: #333; margin-top: 24px;">Your License Key</h2>
+          <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">Keep this safe for future reference:</p>
+          <p style="font-size: 20px; font-weight: bold; padding: 16px; background: #f0f0f0; border-radius: 6px; margin: 12px 0; word-break: break-all; text-align: center; font-family: 'Courier New', monospace;">${licenseKey}</p>
+
+          <h2 style="color: #333; margin-top: 24px;">Get Started</h2>
+          <p style="color: #666; margin: 8px 0;">Download and install your app using the button below:</p>
+          <p style="margin: 16px 0; text-align: center;">
+            <a href="${downloadUrl}" style="background: #00d1ff; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px;">Download ${appName}</a>
+          </p>
+
+          <div style="background: #f0f8ff; padding: 16px; border-radius: 6px; margin-top: 24px; border-left: 4px solid #00d1ff;">
+            <p style="margin: 0; color: #0066cc; font-size: 14px;"><strong>Need Help?</strong></p>
+            <p style="margin: 8px 0 0 0; color: #666; font-size: 14px;">If you have any questions or issues, just reply to this email. We're here to help!</p>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #ddd; margin: 32px 0;">
+          <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 TechApps. All rights reserved.</p>
+        </div>
       </div>
     `
   });
