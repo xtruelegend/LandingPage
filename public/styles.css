@@ -94,6 +94,8 @@ body::before {
 /* Hero */
 .hero {
   padding: 80px 0 120px;
+  position: relative;
+  overflow: hidden;
 }
 
 .hero .container {
