@@ -4,56 +4,64 @@ const APPS = [
     name: "Pro Studio",
     desc: "Advanced editing and automation tools for creative professionals",
     price: "29.99",
-    icon: "🎨"
+    icon: "🎨",
+    status: "coming-soon"
   },
   {
     id: 2,
     name: "Dev Toolkit",
     desc: "Essential utilities for modern software development workflows",
     price: "19.99",
-    icon: "💻"
+    icon: "💻",
+    status: "coming-soon"
   },
   {
     id: 3,
     name: "BudgetXT",
     desc: "Simple, powerful budget tracking and financial planning for everyday use",
     price: "14.99",
-    icon: "💰"
+    icon: "💰",
+    status: "available"
   },
   {
     id: 4,
     name: "Atlas AI",
     desc: "Smart assistant for planning, research, and summaries",
     price: "24.99",
-    icon: "🤖"
+    icon: "🤖",
+    status: "coming-soon"
   },
   {
     id: 5,
     name: "Signal Mesh",
     desc: "Realtime monitoring and alerts for critical workflows",
     price: "17.99",
-    icon: "📡"
+    icon: "📡",
+    status: "coming-soon"
   },
   {
     id: 6,
     name: "Neural Notes",
     desc: "Organize ideas with AI tagging and quick capture",
     price: "11.99",
-    icon: "🧠"
+    icon: "🧠",
+    status: "coming-soon"
   },
   {
     id: 7,
     name: "Flux Renderer",
     desc: "High-performance export pipeline for creators",
     price: "21.99",
-    icon: "⚙️"
+    icon: "⚙️",
+    status: "coming-soon"
   },
   {
     id: 8,
     name: "Pulse Tracker",
     desc: "Live analytics dashboard with alerts and insights",
     price: "16.99",
-    icon: "📈"
+    icon: "📈",
+    status: "coming-soon"
   }
 ];
 
@@ -73,14 +81,21 @@ async function loadConfig() {
 function renderApps() {
   const grid = document.getElementById("appsGrid");
   if (!grid) return;
-  const renderCard = (app) => `
-    <div class="app-card" onclick="openModal(${app.id})" role="listitem">
-      <div style="font-size: 64px; margin-bottom: 16px;">${app.icon}</div>
-      <h3>${app.name}</h3>
-      <p>${app.desc}</p>
-      <div class="app-price">$${app.price}</div>
-    </div>
-  `;
+  const renderCard = (app) => {
+    const isComingSoon = app.status === "coming-soon";
+    const clickHandler = isComingSoon ? "" : `onclick="openModal(${app.id})"`;
+    const cardClass = isComingSoon ? "app-card coming-soon" : "app-card";
+    const badge = isComingSoon ? '<div class="app-badge">Coming Soon</div>' : '';
+    return `
+      <div class="${cardClass}" ${clickHandler} role="listitem">
+        <div style="font-size: 64px; margin-bottom: 16px;">${app.icon}</div>
+        ${badge}
+        <h3>${app.name}</h3>
+        <p>${app.desc}</p>
+        <div class="app-price">$${app.price}</div>
+      </div>
+    `;
+  };
 
   const cards = APPS.map(renderCard).join("");
   grid.innerHTML = `${cards}${cards}${cards}`;

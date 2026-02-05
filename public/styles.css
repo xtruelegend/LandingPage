@@ -168,6 +168,43 @@ body::before {
   justify-content: center;
 }
 
+.featured-app {
+  background: var(--bg);
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  width: 100%;
+  max-width: 300px;
+  box-shadow: 0 20px 60px rgba(0, 102, 255, 0.2);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.featured-icon {
+  font-size: 80px;
+  margin-bottom: 16px;
+}
+
+.featured-app h3 {
+  font-size: 24px;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.featured-app p {
+  color: var(--text-light);
+  font-size: 14px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.featured-price {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
 .tech-circle {
   width: 300px;
   height: 300px;
@@ -315,12 +352,31 @@ body::before {
   transition: all 0.2s;
   scroll-snap-align: start;
   min-height: 260px;
+  position: relative;
 }
 
-.app-card:hover {
+.app-card:hover:not(.coming-soon) {
   border-color: var(--primary);
   transform: translateY(-4px);
   box-shadow: 0 12px 32px rgba(0, 102, 255, 0.12);
+}
+
+.app-card.coming-soon {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.app-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #666;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .app-card h3 {
