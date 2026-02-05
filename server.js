@@ -14,6 +14,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const DATA_DIR = path.join(__dirname, "data");
+const KEYS_FILE = path.join(DATA_DIR, "keys.json");
+
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || "";
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
 const PAYPAL_ENV = process.env.PAYPAL_ENV || "sandbox";
@@ -29,9 +32,6 @@ const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
 const SMTP_USER = process.env.SMTP_USER || "";
 const SMTP_PASS = process.env.SMTP_PASS || "";
 const SMTP_FROM = process.env.SMTP_FROM || "";
-
-const DATA_DIR = path.join(__dirname, "data");
-const KEYS_FILE = path.join(DATA_DIR, "keys.json");
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
