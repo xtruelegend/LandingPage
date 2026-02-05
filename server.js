@@ -119,6 +119,61 @@ function createLicenseKey() {
   return `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}`;
 }
 
+async function getPooledLicenseKey() {
+  const loadKeysPayload = async () => {
+    if (KEYS_LOCAL_PATH && fs.existsSync(KEYS_LOCAL_PATH)) {
+      try {
+        const raw = await fs.promises.readFile(KEYS_LOCAL_PATH, "utf8");
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error("Error reading KEYS_LOCAL_PATH:", e.message);
+      }
+    }
+
+    if (KEYS_REMOTE_URL) {
+      try {
+        const response = await fetch(KEYS_REMOTE_URL);
+        if (!response.ok) return null;
+        return response.json();
+      } catch (e) {
+        console.error("Error fetching KEYS_REMOTE_URL:", e.message);
+      }
+    }
+
+    return null;
+  };
+
+  const payload = await loadKeysPayload();
+  if (!payload) return null;
+
+  let keysList = [];
+  if (Array.isArray(payload)) {
+    keysList = payload;
+  } else if (Array.isArray(payload.keys)) {
+    keysList = payload.keys;
+  }
+
+  if (!keysList.length) return null;
+
+  const issued = (() => {
+    try {
+      if (!fs.existsSync(KEYS_FILE)) return new Set();
+      const raw = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
+      const records = Array.isArray(raw) ? raw : [];
+      return new Set(records.map((record) => String(record.licenseKey || "").toUpperCase()));
+    } catch (e) {
+      console.error("Error reading issued keys:", e.message);
+      return new Set();
+    }
+  })();
+
+  const nextKey = keysList
+    .map((key) => String(key).toUpperCase())
+    .find((key) => key && !issued.has(key));
+
+  return nextKey || null;
+}
+
 function saveLicenseKey(record) {
   ensureDataFile();
   const existing = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
@@ -377,7 +432,10 @@ app.post("/api/orders/:orderID/capture", async (req, res) => {
     const desiredEmail = customData.email || payerEmail;
     const productName = customData.product || "App License";
 
-    const licenseKey = createLicenseKey();
+    const licenseKey = await getPooledLicenseKey();
+    if (!licenseKey) {
+      return res.status(500).json({ error: "No license keys available" });
+    }
 
     saveLicenseKey({
       orderId: orderID,
@@ -436,7 +494,10 @@ app.get("/return", async (req, res) => {
       ? JSON.parse(purchaseUnit.custom_id)
       : {};
 
-    const licenseKey = createLicenseKey();
+    const licenseKey = await getPooledLicenseKey();
+    if (!licenseKey) {
+      return res.redirect("/?error=no_keys_available");
+    }
     saveLicenseKey({
       timestamp: new Date().toISOString(),
       email: customId.email || payerEmail,
