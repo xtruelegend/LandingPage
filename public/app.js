@@ -227,7 +227,8 @@ async function initiatePayPalCheckout() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         desiredEmail: email,
-        productName: currentApp.name
+        productName: currentApp.name,
+        productPrice: currentApp.price
       })
     });
 

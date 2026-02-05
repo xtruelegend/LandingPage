@@ -254,7 +254,16 @@ app.post("/api/verify-key", async (req, res) => {
 app.post("/api/orders", async (req, res) => {
   try {
     const accessToken = await getPayPalAccessToken();
-    const { desiredEmail, productName } = req.body || {};
+    const { desiredEmail, productName, productPrice } = req.body || {};
+    const protoHeader = req.headers["x-forwarded-proto"];
+    const protocol = Array.isArray(protoHeader)
+      ? protoHeader[0]
+      : String(protoHeader || req.protocol).split(",")[0];
+    const baseUrl = `${protocol}://${req.get("host")}`;
+    const normalizedPrice = Number.parseFloat(productPrice);
+    const orderPrice = Number.isFinite(normalizedPrice)
+      ? normalizedPrice.toFixed(2)
+      : PRODUCT_PRICE;
 
     const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
       method: "POST",
@@ -270,12 +279,14 @@ app.post("/api/orders", async (req, res) => {
             custom_id: JSON.stringify({ email: desiredEmail, product: productName }),
             amount: {
               currency_code: CURRENCY,
-              value: PRODUCT_PRICE
+              value: orderPrice
             }
           }
         ],
-        return_url: `${req.protocol}://${req.get("host")}/return`,
-        cancel_url: `${req.protocol}://${req.get("host")}/`
+        application_context: {
+          return_url: `${baseUrl}/return`,
+          cancel_url: `${baseUrl}/`
+        }
       })
     });
 
