@@ -1,0 +1,30 @@
+{
+  "pricingTiers": [
+    {
+      "name": "Launch Special",
+      "maxCopies": 100,
+      "price": 1.00,
+      "description": "Limited time launch pricing"
+    },
+    {
+      "name": "Early Bird",
+      "maxCopies": 250,
+      "price": 5.00,
+      "description": "Early adopter pricing"
+    },
+    {
+      "name": "Regular",
+      "maxCopies": 250,
+      "price": 15.00,
+      "description": "Standard pricing"
+    },
+    {
+      "name": "Full Price",
+      "maxCopies": 400,
+      "price": 35.00,
+      "description": "Full retail price"
+    }
+  ],
+  "salesCount": 0,
+  "totalCopiesAvailable": 1000
+}

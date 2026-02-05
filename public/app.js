@@ -193,15 +193,47 @@ function openModal(appId) {
 
   document.getElementById("modalTitle").textContent = currentApp.name;
   document.getElementById("modalDesc").textContent = currentApp.desc;
-  document.getElementById("modalPrice").textContent = `$${currentApp.price}`;
   document.getElementById("modalVisual").textContent = currentApp.icon;
   document.getElementById("modalSuccess").classList.remove("active");
   document.getElementById("modalEmail").value = "";
   document.getElementById("modalNote").textContent = "";
   document.getElementById("buyNowBtn").disabled = false;
 
+  // Fetch and display current pricing tier
+  fetchAndDisplayPrice();
+
   const modal = document.getElementById("appModal");
   modal.classList.add("active");
+}
+
+async function fetchAndDisplayPrice() {
+  try {
+    const res = await fetch("/api/pricing");
+    const pricing = await res.json();
+    const priceDisplay = document.getElementById("modalPrice");
+    priceDisplay.textContent = `$${pricing.currentPrice}`;
+    
+    // Add tier info if available
+    const tierInfo = pricing.currentTier ? ` (${pricing.currentTier})` : "";
+    const salesInfo = pricing.salesCount ? ` - ${pricing.salesCount} sold` : "";
+    if (tierInfo || salesInfo) {
+      const priceNote = document.getElementById("modalPriceNote");
+      if (!priceNote) {
+        const note = document.createElement("div");
+        note.id = "modalPriceNote";
+        note.style.fontSize = "12px";
+        note.style.color = "#666";
+        note.style.marginTop = "4px";
+        priceDisplay.parentElement.appendChild(note);
+        note.textContent = tierInfo + salesInfo;
+      } else {
+        priceNote.textContent = tierInfo + salesInfo;
+      }
+    }
+  } catch (err) {
+    console.error("Failed to fetch pricing:", err);
+    document.getElementById("modalPrice").textContent = `$${currentApp.price}`;
+  }
 }
 
 function closeModal() {
@@ -227,8 +259,7 @@ async function initiatePayPalCheckout() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         desiredEmail: email,
-        productName: currentApp.name,
-        productPrice: currentApp.price
+        productName: currentApp.name
       })
     });
 

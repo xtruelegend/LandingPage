@@ -78,7 +78,42 @@ function ensureDataFile() {
     fs.writeFileSync(KEYS_FILE, JSON.stringify([], null, 2));
   }
 }
+function getCurrentTierPrice() {
+  try {
+    const couponsPath = path.join(__dirname, "coupons.json");
+    if (!fs.existsSync(couponsPath)) {
+      return PRODUCT_PRICE;
+    }
+    const couponsData = JSON.parse(fs.readFileSync(couponsPath, "utf8"));
+    const salesCount = couponsData.salesCount || 0;
+    const tiers = couponsData.pricingTiers || [];
+    
+    let copiesSoFar = 0;
+    for (const tier of tiers) {
+      if (salesCount < copiesSoFar + tier.maxCopies) {
+        return tier.price.toFixed(2);
+      }
+      copiesSoFar += tier.maxCopies;
+    }
+    return tiers[tiers.length - 1]?.price?.toFixed(2) || PRODUCT_PRICE;
+  } catch (err) {
+    console.error("Error getting tier price:", err);
+    return PRODUCT_PRICE;
+  }
+}
 
+function incrementSalesCount() {
+  try {
+    const couponsPath = path.join(__dirname, "coupons.json");
+    if (fs.existsSync(couponsPath)) {
+      const couponsData = JSON.parse(fs.readFileSync(couponsPath, "utf8"));
+      couponsData.salesCount = (couponsData.salesCount || 0) + 1;
+      fs.writeFileSync(couponsPath, JSON.stringify(couponsData, null, 2));
+    }
+  } catch (err) {
+    console.error("Error incrementing sales count:", err);
+  }
+}
 function createLicenseKey() {
   const raw = crypto.randomUUID().replace(/-/g, "").toUpperCase();
   return `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}`;
@@ -254,16 +289,15 @@ app.post("/api/verify-key", async (req, res) => {
 app.post("/api/orders", async (req, res) => {
   try {
     const accessToken = await getPayPalAccessToken();
-    const { desiredEmail, productName, productPrice } = req.body || {};
+    const { desiredEmail, productName } = req.body || {};
     const protoHeader = req.headers["x-forwarded-proto"];
     const protocol = Array.isArray(protoHeader)
       ? protoHeader[0]
       : String(protoHeader || req.protocol).split(",")[0];
     const baseUrl = `${protocol}://${req.get("host")}`;
-    const normalizedPrice = Number.parseFloat(productPrice);
-    const orderPrice = Number.isFinite(normalizedPrice)
-      ? normalizedPrice.toFixed(2)
-      : PRODUCT_PRICE;
+    
+    // Use tier pricing instead of client-sent price
+    const orderPrice = getCurrentTierPrice();
 
     const response = await fetch(`${getPayPalBaseUrl()}/v2/checkout/orders`, {
       method: "POST",
@@ -354,6 +388,9 @@ app.post("/api/orders/:orderID/capture", async (req, res) => {
     });
 
     const emailResult = await sendKeyEmail(desiredEmail, licenseKey, productName);
+    
+    // Increment sales count for tier pricing
+    incrementSalesCount();
 
     res.json({
       capture: captureData,
@@ -419,6 +456,46 @@ app.get("/return", async (req, res) => {
   } catch (error) {
     console.error("Capture error:", error);
     res.redirect("/?error=capture_failed");
+  }
+});
+
+app.get("/api/pricing", (req, res) => {
+  try {
+    const couponsPath = path.join(__dirname, "coupons.json");
+    if (!fs.existsSync(couponsPath)) {
+      return res.json({
+        currentPrice: PRODUCT_PRICE,
+        currentTier: "Full Price",
+        salesCount: 0,
+        tiers: []
+      });
+    }
+    const couponsData = JSON.parse(fs.readFileSync(couponsPath, "utf8"));
+    const currentPrice = getCurrentTierPrice();
+    const salesCount = couponsData.salesCount || 0;
+    let currentTier = "Full Price";
+    let copiesSoFar = 0;
+    for (const tier of couponsData.pricingTiers || []) {
+      if (salesCount < copiesSoFar + tier.maxCopies) {
+        currentTier = tier.name;
+        break;
+      }
+      copiesSoFar += tier.maxCopies;
+    }
+    res.json({
+      currentPrice,
+      currentTier,
+      salesCount,
+      tiers: couponsData.pricingTiers || []
+    });
+  } catch (err) {
+    console.error("Error getting pricing:", err);
+    res.json({
+      currentPrice: PRODUCT_PRICE,
+      currentTier: "Full Price",
+      salesCount: 0,
+      tiers: []
+    });
   }
 });
 
