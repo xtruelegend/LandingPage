@@ -275,6 +275,58 @@ app.get("/api/config", (req, res) => {
   });
 });
 
+app.post("/api/lookup-purchases", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+
+    // Try to find purchases in local records (development)
+    let purchases = [];
+    
+    if (KEYS_FILE && fs.existsSync(KEYS_FILE)) {
+      try {
+        const raw = fs.readFileSync(KEYS_FILE, "utf8");
+        const records = JSON.parse(raw);
+        const matching = Array.isArray(records) 
+          ? records.filter(r => r.email && String(r.email).toLowerCase().trim() === normalizedEmail)
+          : [];
+        
+        purchases = matching.map(r => ({
+          email: r.email,
+          product: r.product || "Unknown",
+          licenseKey: r.licenseKey,
+          createdAt: r.createdAt || r.timestamp,
+          orderId: r.orderId
+        }));
+      } catch (err) {
+        console.error("Error reading records:", err.message);
+      }
+    }
+
+    if (purchases.length === 0) {
+      return res.status(404).json({ 
+        found: false,
+        message: "No purchases found for this email. Please check if you used a different email address or contact support." 
+      });
+    }
+
+    res.json({
+      found: true,
+      email: normalizedEmail,
+      purchases,
+      message: `Found ${purchases.length} purchase(s) under this email.`
+    });
+  } catch (error) {
+    console.error("Lookup error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/api/resend-key", async (req, res) => {
   try {
     const { email, licenseKey, appName } = req.body;

@@ -213,8 +213,21 @@
           </div>
 
           <div class="license-section">
+            <h2>🔍 Find Your Purchase</h2>
+            <p>Enter your email to look up your purchases and resend your license key.</p>
+            <input
+              type="email"
+              id="lookupEmail"
+              class="license-input"
+              placeholder="your-email@example.com"
+            />
+            <button class="license-btn" onclick="lookupPurchases()">Find My Purchase</button>
+            <div id="lookupResult" class="license-result"></div>
+          </div>
+
+          <div class="license-section" style="margin-top: 48px; padding-top: 48px; border-top: 2px solid var(--border);">
             <h2>✓ Verify License Key</h2>
-            <p>Enter your license key to verify it and view your app details.</p>
+            <p>Already have your license key? Verify it here.</p>
             <input
               type="text"
               id="licenseKeyInput"
@@ -226,33 +239,16 @@
           </div>
 
           <div class="license-section" style="margin-top: 48px; padding-top: 48px; border-top: 2px solid var(--border);">
-            <h2>📧 Resend License Key</h2>
-            <p>Didn't receive your license key email? Enter your details below and we'll resend it.</p>
-            <input
-              type="email"
-              id="resendEmail"
-              class="license-input"
-              placeholder="your-email@example.com"
-            />
+            <h2>✓ Verify License Key</h2>
+            <p>Already have your license key? Verify it here.</p>
             <input
               type="text"
-              id="resendKey"
+              id="licenseKeyInput"
               class="license-input"
-              placeholder="Your license key (BBT1.XXXXXXXX.XXXXXXXX)"
-              style="margin-top: 12px;"
+              placeholder="XXXX-XXXX-XXXX-XXXX"
             />
-            <select id="resendApp" class="license-input" style="margin-top: 12px;">
-              <option value="">-- Select Your App --</option>
-              <option value="BudgetXT">BudgetXT</option>
-              <option value="AgendaXT">AgendaXT</option>
-              <option value="InventoryXT">InventoryXT</option>
-              <option value="FileSorterXT">FileSorterXT</option>
-              <option value="BookedXT">BookedXT</option>
-              <option value="PanicXT">PanicXT</option>
-              <option value="RoccoXT">RoccoXT</option>
-            </select>
-            <button class="license-btn" onclick="resendLicenseKey()" style="margin-top: 12px;">Resend License Email</button>
-            <div id="resendResult" class="license-result"></div>
+            <button class="license-btn" onclick="verifyLicenseKey()">Verify License</button>
+            <div id="licenseResult" class="license-result"></div>
           </div>
         </section>
       </div>
@@ -266,6 +262,90 @@
 
     <script src="app.js"></script>
     <script>
+      async function lookupPurchases() {
+        const email = document.getElementById("lookupEmail").value.trim();
+        const resultDiv = document.getElementById("lookupResult");
+
+        if (!email) {
+          resultDiv.className = "license-result error";
+          resultDiv.textContent = "Please enter your email address.";
+          return;
+        }
+
+        resultDiv.className = "license-result";
+        resultDiv.textContent = "Looking up your purchases...";
+        resultDiv.style.display = "block";
+
+        try {
+          const response = await fetch("/api/lookup-purchases", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email })
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.found) {
+            resultDiv.className = "license-result success";
+            let html = `<strong>✓ Found ${data.purchases.length} Purchase(s)!</strong><br><br>`;
+            
+            data.purchases.forEach((purchase, idx) => {
+              html += `
+                <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid var(--primary);">
+                  <strong>${purchase.product}</strong><br>
+                  <small style="color: #666;">Key: ${purchase.licenseKey}</small><br>
+                  <button onclick="quickResend('${purchase.email}', '${purchase.licenseKey}', '${purchase.product}')" style="margin-top: 8px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">Resend Email</button>
+                </div>
+              `;
+            });
+            
+            resultDiv.innerHTML = html;
+          } else {
+            resultDiv.className = "license-result error";
+            resultDiv.textContent = `✗ ${data.message || "No purchases found. Please check your email address."}`;
+          }
+        } catch (error) {
+          resultDiv.className = "license-result error";
+          resultDiv.textContent = "Error looking up purchases. Please try again.";
+          console.error("Lookup error:", error);
+        }
+      }
+
+      async function quickResend(email, key, appName) {
+        const resultDiv = document.getElementById("lookupResult");
+        resultDiv.textContent = "Sending email...";
+
+        try {
+          const response = await fetch("/api/resend-key", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              email,
+              licenseKey: key,
+              appName
+            })
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            resultDiv.className = "license-result success";
+            resultDiv.innerHTML = `
+              <strong>✓ Email Sent!</strong><br>
+              Your ${appName} license key has been resent to <strong>${email}</strong>.<br>
+              Check your inbox (or spam folder) within a few moments.
+            `;
+          } else {
+            resultDiv.className = "license-result error";
+            resultDiv.textContent = `✗ Error: ${data.error || "Failed to send"}`;
+          }
+        } catch (error) {
+          resultDiv.className = "license-result error";
+          resultDiv.textContent = "Error sending email.";
+          console.error("Resend error:", error);
+        }
+      }
+
       async function verifyLicenseKey() {
         const key = document.getElementById("licenseKeyInput").value.trim();
         const resultDiv = document.getElementById("licenseResult");
@@ -320,64 +400,14 @@
         }
       }
 
-      async function resendLicenseKey() {
-        const email = document.getElementById("resendEmail").value.trim();
-        const key = document.getElementById("resendKey").value.trim();
-        const appName = document.getElementById("resendApp").value.trim();
-        const resultDiv = document.getElementById("resendResult");
-
-        if (!email || !key || !appName) {
-          resultDiv.className = "license-result error";
-          resultDiv.textContent = "Please fill in all fields (email, license key, and app name).";
-          return;
-        }
-
-        resultDiv.className = "license-result";
-        resultDiv.textContent = "Sending license key email...";
-        resultDiv.style.display = "block";
-
-        try {
-          const response = await fetch("/api/resend-key", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              email: email,
-              licenseKey: key.toUpperCase(),
-              appName: appName
-            })
-          });
-
-          const data = await response.json();
-
-          if (response.ok && data.success) {
-            resultDiv.className = "license-result success";
-            resultDiv.innerHTML = `
-              <strong>✓ Email Sent!</strong><br>
-              Your license key has been resent to <strong>${email}</strong>.<br>
-              Check your inbox (or spam folder) for the receipt and download link.
-            `;
-            document.getElementById("resendEmail").value = "";
-            document.getElementById("resendKey").value = "";
-            document.getElementById("resendApp").value = "";
-          } else {
-            resultDiv.className = "license-result error";
-            resultDiv.textContent = `✗ Error: ${data.error || "Failed to resend email"}`;
-          }
-        } catch (error) {
-          resultDiv.className = "license-result error";
-          resultDiv.textContent = "Error sending email. Please try again.";
-          console.error("Resend error:", error);
-        }
-      }
+      // Allow Enter key to lookup
+      document.getElementById("lookupEmail").addEventListener("keypress", function(e) {
+        if (e.key === "Enter") lookupPurchases();
+      });
 
       // Allow Enter key to verify
       document.getElementById("licenseKeyInput").addEventListener("keypress", function(e) {
         if (e.key === "Enter") verifyLicenseKey();
-      });
-
-      // Allow Enter key to resend
-      document.getElementById("resendKey").addEventListener("keypress", function(e) {
-        if (e.key === "Enter") resendLicenseKey();
       });
     </script>
   </body>
