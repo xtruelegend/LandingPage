@@ -23,7 +23,8 @@ const PAYPAL_ENV = process.env.PAYPAL_ENV || "sandbox";
 const PRODUCT_PRICE = process.env.PRODUCT_PRICE || "9.99";
 const CURRENCY = process.env.CURRENCY || "USD";
 const KEYS_REMOTE_URL = process.env.KEYS_REMOTE_URL || "";
-const KEYS_VALIDATE_URL = process.env.KEYS_VALIDATE_URL || "";
+const DEFAULT_KEYS_VALIDATE_URL = "https://budget-xt.vercel.app/api/validate-key";
+const KEYS_VALIDATE_URL = process.env.KEYS_VALIDATE_URL || DEFAULT_KEYS_VALIDATE_URL;
 const DEFAULT_KEYS_PATH = path.join(DATA_DIR, "allowed-keys.json");
 const KEYS_LOCAL_PATH = process.env.KEYS_LOCAL_PATH || DEFAULT_KEYS_PATH;
 
@@ -144,17 +145,22 @@ app.post("/api/verify-key", async (req, res) => {
     const normalizedKey = key.toUpperCase();
 
     const localMatchesKey = () => {
-      ensureDataFile();
-      const raw = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
-      const localRecords = Array.isArray(raw) ? raw : [];
-      const found = localRecords.find((record) => record.licenseKey === normalizedKey);
-      if (!found) return null;
-      return {
-        valid: true,
-        email: found.email,
-        product: found.product,
-        timestamp: found.timestamp
-      };
+      try {
+        if (!fs.existsSync(KEYS_FILE)) return null;
+        const raw = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
+        const localRecords = Array.isArray(raw) ? raw : [];
+        const found = localRecords.find((record) => record.licenseKey === normalizedKey);
+        if (!found) return null;
+        return {
+          valid: true,
+          email: found.email,
+          product: found.product,
+          timestamp: found.timestamp
+        };
+      } catch (error) {
+        console.error("Local key lookup failed:", error.message);
+        return null;
+      }
     };
 
     const remoteMatchesKey = async () => {
