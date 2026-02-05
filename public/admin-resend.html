@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Resend License Key</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .button:active {
+            transform: translateY(0);
+        }
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 14px;
+            border-radius: 6px;
+            display: none;
+            font-size: 14px;
+        }
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        .info-box {
+            background: #f0f8ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.5;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Resend License Key</h1>
+        <p class="subtitle">Manually resend a license key email to a customer</p>
+
+        <div class="info-box">
+            <strong>How to use:</strong><br>
+            1. Get the customer's email and license key from Vercel logs<br>
+            2. Fill in the form below<br>
+            3. Click "Resend Email"
+        </div>
+
+        <form id="resendForm">
+            <div class="form-group">
+                <label for="email">Customer Email *</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    placeholder="customer@example.com" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="licenseKey">License Key *</label>
+                <input 
+                    type="text" 
+                    id="licenseKey" 
+                    placeholder="BBT1.XXXXXXXX.XXXXXXXX" 
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="appName">App Name *</label>
+                <select id="appName" required>
+                    <option value="">-- Select App --</option>
+                    <option value="BudgetXT">BudgetXT</option>
+                    <option value="AgendaXT">AgendaXT</option>
+                    <option value="InventoryXT">InventoryXT</option>
+                    <option value="FileSorterXT">FileSorterXT</option>
+                    <option value="BookedXT">BookedXT</option>
+                    <option value="PanicXT">PanicXT</option>
+                    <option value="RoccoXT">RoccoXT</option>
+                </select>
+            </div>
+
+            <div class="loading" id="loading">
+                <p>Sending email...</p>
+            </div>
+
+            <button type="submit" class="button" id="submitBtn">Resend Email</button>
+
+            <div id="message" class="message"></div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('resendForm');
+        const messageEl = document.getElementById('message');
+        const loadingEl = document.getElementById('loading');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const licenseKey = document.getElementById('licenseKey').value.trim();
+            const appName = document.getElementById('appName').value.trim();
+
+            messageEl.classList.remove('success', 'error');
+            messageEl.textContent = '';
+            loadingEl.style.display = 'block';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/resend-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, licenseKey, appName })
+                });
+
+                const data = await response.json();
+                loadingEl.style.display = 'none';
+
+                if (response.ok && data.success) {
+                    messageEl.className = 'message success';
+                    messageEl.textContent = `✓ Email sent successfully to ${email}!`;
+                    form.reset();
+                } else {
+                    messageEl.className = 'message error';
+                    messageEl.textContent = `✗ Error: ${data.error || 'Failed to send email'}`;
+                }
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                messageEl.className = 'message error';
+                messageEl.textContent = `✗ Network error: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
