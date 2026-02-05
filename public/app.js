@@ -75,16 +75,26 @@ function renderApps() {
   if (!grid) return;
   const renderCard = (app) => {
     const isComingSoon = app.status === "coming-soon";
+    const isAvailable = app.status === "available";
     const clickHandler = isComingSoon ? "" : `onclick="openModal(${app.id})"`;
     const cardClass = isComingSoon ? "app-card coming-soon" : "app-card";
-    const badge = isComingSoon ? '<div class="app-badge">Coming Soon</div>' : '';
+    const badge = isComingSoon ? '<div class="app-badge">Coming Soon</div>' : "";
+    const priceMarkup = isAvailable
+      ? `
+        <div class="app-launch-label">Launch Special</div>
+        <div class="app-price">
+          <span class="price-original">$35</span>
+          <span class="price-current" id="budgetxtCardPrice">$${app.price}</span>
+        </div>
+      `
+      : `<div class="app-price">$${app.price}</div>`;
     return `
       <div class="${cardClass}" ${clickHandler} role="listitem">
         <div style="font-size: 64px; margin-bottom: 16px;">${app.icon}</div>
         ${badge}
         <h3>${app.name}</h3>
         <p>${app.desc}</p>
-        <div class="app-price">$${app.price}</div>
+        ${priceMarkup}
       </div>
     `;
   };
@@ -92,6 +102,25 @@ function renderApps() {
   const cards = APPS.map(renderCard).join("");
   grid.innerHTML = `${cards}${cards}${cards}`;
   initCarousel();
+  updateLaunchPricing();
+}
+
+async function updateLaunchPricing() {
+  try {
+    const res = await fetch("/api/pricing");
+    if (!res.ok) return;
+    const pricing = await res.json();
+    const featuredPrice = document.getElementById("featuredPrice");
+    if (featuredPrice) {
+      featuredPrice.textContent = `$${pricing.currentPrice}`;
+    }
+    const cardPrice = document.getElementById("budgetxtCardPrice");
+    if (cardPrice) {
+      cardPrice.textContent = `$${pricing.currentPrice}`;
+    }
+  } catch (error) {
+    console.error("Failed to update launch pricing:", error);
+  }
 }
 
 function scrollToApps() {
