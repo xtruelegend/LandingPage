@@ -175,10 +175,22 @@ async function getPooledLicenseKey() {
 }
 
 function saveLicenseKey(record) {
-  ensureDataFile();
-  const existing = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
-  existing.push(record);
-  fs.writeFileSync(KEYS_FILE, JSON.stringify(existing, null, 2));
+  // On Vercel (serverless), we can't write to local filesystem
+  // In production, you'd send this to a database or remote endpoint
+  if (process.env.VERCEL) {
+    console.log("License key record (not saved locally on Vercel):", record);
+    return;
+  }
+  
+  // For local development only
+  try {
+    ensureDataFile();
+    const existing = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
+    existing.push(record);
+    fs.writeFileSync(KEYS_FILE, JSON.stringify(existing, null, 2));
+  } catch (err) {
+    console.error("Warning: Could not save license key record:", err.message);
+  }
 }
 
 // Map app names to their download files
