@@ -166,9 +166,15 @@
 
       <!-- Review Moderation -->
       <div class="admin-section">
-        <h2>⭐ Review Moderation</h2>
-        <p style="color: #666; margin-bottom: 20px;">Approve or delete customer reviews before they appear on the website.</p>
+        <h2>⭐ Pending Reviews</h2>
+        <p style="color: #666; margin-bottom: 20px;">Approve, edit, or delete customer reviews before they appear on the website.</p>
         <div id="reviewsContainer"></div>
+      </div>
+
+      <div class="admin-section">
+        <h2>✅ Approved Reviews</h2>
+        <p style="color: #666; margin-bottom: 20px;">Edit, unpublish, or delete live reviews.</p>
+        <div id="approvedReviewsContainer"></div>
       </div>
     </div>
 
@@ -217,6 +223,7 @@
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminDashboard').style.display = 'block';
         loadPendingReviews();
+        loadApprovedReviews();
       }
 
       function logout() {
@@ -304,6 +311,11 @@
           const response = await fetch('/api/admin/pending-reviews', {
             headers: adminHeaders()
           });
+
+          if (response.status === 401) {
+            logout();
+            return;
+          }
           const data = await response.json();
           
           if (data.reviews.length === 0) {
@@ -333,6 +345,7 @@
                 "${review.text}"
               </div>
               <div class="review-actions">
+                <button class="btn btn-primary" onclick="editReview('${review.id}', 'pending')">✎ Edit</button>
                 <button class="btn btn-approve" onclick="approveReview('${review.id}')">
                   ✓ Approve & Publish
                 </button>
@@ -344,6 +357,61 @@
           `).join('');
         } catch (error) {
           container.innerHTML = '<p style="color: red;">Error loading reviews. Please try again.</p>';
+          console.error('Load error:', error);
+        }
+      }
+
+      async function loadApprovedReviews() {
+        const container = document.getElementById('approvedReviewsContainer');
+        container.innerHTML = '<p style="text-align: center;">Loading approved reviews...</p>';
+
+        try {
+          const response = await fetch('/api/admin/approved-reviews', {
+            headers: adminHeaders()
+          });
+
+          if (response.status === 401) {
+            logout();
+            return;
+          }
+
+          const data = await response.json();
+
+          if (data.reviews.length === 0) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <div style="font-size: 64px; margin-bottom: 16px;">✅</div>
+                <h3>No Approved Reviews</h3>
+                <p>Approved reviews will appear here.</p>
+              </div>
+            `;
+            return;
+          }
+
+          container.innerHTML = data.reviews.map(review => `
+            <div class="review-item" id="approved-${review.id}">
+              <div class="review-header">
+                <div>
+                  <strong>${review.name}</strong>
+                  <br>
+                  <small style="color: #666;">${review.email} • ${new Date(review.date).toLocaleDateString()}</small>
+                </div>
+                <div class="review-stars">
+                  ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                </div>
+              </div>
+              <div class="review-text">
+                "${review.text}"
+              </div>
+              <div class="review-actions">
+                <button class="btn btn-primary" onclick="editReview('${review.id}', 'approved')">✎ Edit</button>
+                <button class="btn btn-approve" onclick="unpublishReview('${review.id}')">↩ Unpublish</button>
+                <button class="btn btn-delete" onclick="deleteApprovedReview('${review.id}')">✗ Delete</button>
+              </div>
+            </div>
+          `).join('');
+        } catch (error) {
+          container.innerHTML = '<p style="color: red;">Error loading approved reviews. Please try again.</p>';
           console.error('Load error:', error);
         }
       }
@@ -363,6 +431,7 @@
             if (document.querySelectorAll('.review-item').length === 0) {
               loadPendingReviews();
             }
+            loadApprovedReviews();
           } else {
             alert('Error approving review');
           }
@@ -395,12 +464,84 @@
           console.error('Delete error:', error);
         }
       }
+
+      async function unpublishReview(reviewId) {
+        if (!confirm('Unpublish this review and move it back to pending?')) return;
+
+        try {
+          const response = await fetch('/api/admin/unpublish-review', {
+            method: 'POST',
+            headers: adminHeaders(),
+            body: JSON.stringify({ reviewId })
+          });
+
+          if (response.ok) {
+            document.getElementById(`approved-${reviewId}`).remove();
+            loadPendingReviews();
+          } else {
+            alert('Error unpublishing review');
+          }
+        } catch (error) {
+          alert('Error unpublishing review');
+          console.error('Unpublish error:', error);
+        }
+      }
+
+      async function deleteApprovedReview(reviewId) {
+        if (!confirm('Delete this approved review permanently?')) return;
+
+        try {
+          const response = await fetch('/api/admin/delete-approved-review', {
+            method: 'POST',
+            headers: adminHeaders(),
+            body: JSON.stringify({ reviewId })
+          });
+
+          if (response.ok) {
+            document.getElementById(`approved-${reviewId}`).remove();
+          } else {
+            alert('Error deleting approved review');
+          }
+        } catch (error) {
+          alert('Error deleting approved review');
+          console.error('Delete approved error:', error);
+        }
+      }
+
+      async function editReview(reviewId, status) {
+        const name = prompt('Edit name (leave blank to keep current):');
+        const text = prompt('Edit review text (leave blank to keep current):');
+        const ratingStr = prompt('Edit rating 1-5 (leave blank to keep current):');
+        const rating = ratingStr ? parseInt(ratingStr) : null;
+
+        try {
+          const response = await fetch('/api/admin/update-review', {
+            method: 'POST',
+            headers: adminHeaders(),
+            body: JSON.stringify({ reviewId, status, name, text, rating })
+          });
+
+          if (response.ok) {
+            if (status === 'pending') {
+              loadPendingReviews();
+            } else {
+              loadApprovedReviews();
+            }
+          } else {
+            alert('Error updating review');
+          }
+        } catch (error) {
+          alert('Error updating review');
+          console.error('Update review error:', error);
+        }
+      }
       
       checkAuth();
       
       setInterval(() => {
         if (authToken) {
           loadPendingReviews();
+          loadApprovedReviews();
         }
       }, 30000);
     </script>
