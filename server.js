@@ -226,7 +226,19 @@ async function getPooledLicenseKey() {
     .map((key) => String(key).toUpperCase())
     .find((key) => key && !issued.has(key));
 
-  return nextKey || null;
+  if (!nextKey) return null;
+
+  // Immediately mark key as issued to avoid duplicates
+  try {
+    if (KV_REST_API_URL && KV_REST_API_TOKEN) {
+      issued.add(nextKey);
+      await kvStore.set("issued_keys", JSON.stringify(Array.from(issued)));
+    }
+  } catch (e) {
+    console.error("Error marking key as issued:", e.message);
+  }
+
+  return nextKey;
 }
 
 async function saveLicenseKey(record) {
@@ -800,7 +812,7 @@ app.get("/return", async (req, res) => {
     if (!licenseKey) {
       return res.redirect("/?error=no_keys_available");
     }
-    saveLicenseKey({
+    await saveLicenseKey({
       timestamp: new Date().toISOString(),
       email: customId.email || payerEmail,
       product: customId.product || "Unknown",
@@ -866,25 +878,36 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// Simple admin authentication
+// Simple admin authentication (stateless signed token)
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "changeme123";
-const ADMIN_TOKEN_KEY = "admin_token";
-let adminTokenMemory = "";
 
-async function setAdminToken(token) {
-  adminTokenMemory = token;
-  await kvStore.set(ADMIN_TOKEN_KEY, token);
+function createAdminToken() {
+  const payload = `${Date.now()}`;
+  const signature = crypto
+    .createHmac("sha256", ADMIN_PASSWORD)
+    .update(payload)
+    .digest("hex");
+  return Buffer.from(`${payload}.${signature}`).toString("base64");
 }
 
-async function getAdminToken() {
-  const stored = await kvStore.get(ADMIN_TOKEN_KEY);
-  return stored || adminTokenMemory || "";
+function verifyAdminToken(token) {
+  try {
+    const decoded = Buffer.from(token, "base64").toString("utf8");
+    const [payload, signature] = decoded.split(".");
+    if (!payload || !signature) return false;
+    const expected = crypto
+      .createHmac("sha256", ADMIN_PASSWORD)
+      .update(payload)
+      .digest("hex");
+    return signature === expected;
+  } catch {
+    return false;
+  }
 }
 
 async function requireAdmin(req, res) {
   const token = req.headers["x-admin-token"] || "";
-  const stored = await getAdminToken();
-  if (!token || !stored || token !== stored) {
+  if (!token || !verifyAdminToken(token)) {
     res.status(401).json({ error: "Unauthorized" });
     return false;
   }
@@ -895,10 +918,8 @@ app.post("/api/admin/login", (req, res) => {
   try {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
-      const token = Buffer.from(`admin:${Date.now()}`).toString('base64');
-      setAdminToken(token).then(() => {
-        res.json({ success: true, token });
-      });
+      const token = createAdminToken();
+      res.json({ success: true, token });
     } else {
       res.status(401).json({ error: "Invalid password" });
     }
@@ -910,13 +931,11 @@ app.post("/api/admin/login", (req, res) => {
 app.post("/api/admin/verify-token", (req, res) => {
   try {
     const { token } = req.body;
-    getAdminToken().then((stored) => {
-      if (token && stored && token === stored) {
-        res.json({ valid: true });
-      } else {
-        res.status(401).json({ valid: false });
-      }
-    });
+    if (token && verifyAdminToken(token)) {
+      res.json({ valid: true });
+    } else {
+      res.status(401).json({ valid: false });
+    }
   } catch (error) {
     res.status(401).json({ valid: false });
   }
