@@ -363,6 +363,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("modalSuccess").classList.add("active");
         document.getElementById("modalKey").textContent = key;
         document.getElementById("downloadLink").href = "/downloads/BudgetXT-Setup-1.5.3.exe";
+        
+        // Hide PayPal button after successful payment
+        const paypalBtn = document.getElementById("buyNowBtn");
+        if (paypalBtn) paypalBtn.style.display = "none";
+        
+        // Hide email input field
+        const emailInput = document.getElementById("modalEmail");
+        if (emailInput && emailInput.previousElementSibling) {
+          emailInput.style.display = "none";
+          emailInput.previousElementSibling.style.display = "none"; // Hide label too
+        }
 
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);

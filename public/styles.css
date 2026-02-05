@@ -596,20 +596,82 @@ body::before {
 .modal-success {
   display: none;
   margin-top: 24px;
-  padding: 24px;
+  padding: 0;
   background: #f0f9f4;
   border: 2px solid #34c759;
   border-radius: 12px;
   text-align: center;
+  overflow: hidden;
 }
 
 .modal-success.active {
   display: block;
 }
 
+.success-header {
+  background: linear-gradient(135deg, #0099ff, #0077cc);
+  padding: 20px;
+  margin: 0;
+}
+
+.success-header h2 {
+  color: white;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
 .modal-success h3 {
   color: #34c759;
-  margin-bottom: 16px;
+  margin: 20px 0 16px 0;
+  padding: 0 24px;
+}
+
+.modal-success > p,
+.modal-success .license-key,
+.modal-success .success-note,
+.modal-success > a {
+  margin-left: 24px;
+  margin-right: 24px;
+}
+
+.install-instructions {
+  background: white;
+  border-top: 2px solid #e0e0e0;
+  padding: 24px;
+  margin-top: 24px;
+  text-align: left;
+}
+
+.install-instructions h4 {
+  color: #0099ff;
+  margin: 0 0 16px 0;
+  font-size: 18px;
+}
+
+.install-instructions ol {
+  margin: 16px 0;
+  padding-left: 24px;
+  line-height: 1.8;
+}
+
+.install-instructions li {
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.install-instructions strong {
+  color: var(--text-dark);
+}
+
+.install-note {
+  background: #fff9e6;
+  border-left: 4px solid #ffc107;
+  padding: 12px 16px;
+  margin-top: 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #856404;
 }
 
 .license-key {
