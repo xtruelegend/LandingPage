@@ -1,3 +1,13 @@
+// Load PayPal SDK dynamically
+function loadPayPalSDK(clientId) {
+  if (window.paypal) return; // Already loaded
+  
+  const script = document.createElement('script');
+  script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture&enable-funding=venmo,paylater`;
+  script.async = true;
+  document.head.appendChild(script);
+}
+
 const APPS = [
   {
     id: 1,
@@ -64,6 +74,9 @@ async function loadConfig() {
   try {
     const res = await fetch("/api/config");
     config = await res.json();
+    if (config.clientId) {
+      loadPayPalSDK(config.clientId);
+    }
   } catch (error) {
     console.error("Failed to load config:", error);
     config = { clientId: "", currency: "USD", productPrice: "9.99" };
