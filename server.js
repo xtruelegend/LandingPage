@@ -409,7 +409,7 @@ async function sendKeyEmail(to, licenseKey, appName, orderDetails = {}) {
     from: SMTP_FROM,
     to,
     subject: `Your ${appName} License Key & Receipt`,
-    text: `Thanks for your purchase!\n\nOrder Confirmation\n=================\nApp: ${appName}\nLicense Key: ${licenseKey}\nDate: ${purchaseDate}\n\nDownload: ${downloadUrl}\n\nQuestions? Reply to this email.`,
+    text: `Thanks for your purchase!\n\nOrder Confirmation\n=================\nApp: ${appName}\nLicense Key: ${licenseKey}\nDate: ${purchaseDate}\n\nDownload: ${downloadUrl}\n\nQuick Install Steps:\n1) Download the installer\n2) Open it to start setup\n3) If Windows warns you, click "More info" then "Run anyway"\n4) Enter your license key when the app opens\n\nQuestions? Reply to this email.`,
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <div style="background: linear-gradient(135deg, #00d1ff 0%, #0099cc 100%); color: white; padding: 32px; border-radius: 8px 8px 0 0; text-align: center;">
@@ -435,6 +435,15 @@ async function sendKeyEmail(to, licenseKey, appName, orderDetails = {}) {
           <p style="margin: 16px 0; text-align: center;">
             <a href="${downloadUrl}" style="background: #00d1ff; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px;">Download ${appName}</a>
           </p>
+
+          <div style="background: #fff9e6; padding: 16px; border-radius: 6px; margin-top: 16px; border-left: 4px solid #ffc107;">
+            <p style="margin: 0; color: #856404; font-size: 14px;"><strong>Quick Install Tips</strong></p>
+            <ol style="margin: 8px 0 0 18px; color: #856404; font-size: 14px;">
+              <li>Run the installer after download</li>
+              <li>If Windows shows a warning, click <strong>More info</strong> → <strong>Run anyway</strong></li>
+              <li>Enter your license key when the app opens</li>
+            </ol>
+          </div>
 
           <div style="background: #f0f8ff; padding: 16px; border-radius: 6px; margin-top: 24px; border-left: 4px solid #00d1ff;">
             <p style="margin: 0; color: #0066cc; font-size: 14px;"><strong>Need Help?</strong></p>
