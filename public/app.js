@@ -166,6 +166,9 @@ function scrollApps(direction) {
 }
 
 function initCarousel() {
+  // Disable carousel on mobile/tablet devices
+  if (window.innerWidth <= 768) return;
+  
   const track = document.getElementById("appsGrid");
   if (!track) return;
 
