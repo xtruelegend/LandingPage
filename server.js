@@ -402,7 +402,8 @@ async function sendKeyEmail(to, licenseKey, appName, orderDetails = {}) {
 
   // Get the download file for this app
   const downloadFile = APP_DOWNLOADS[appName] || "BudgetXT-Setup-1.5.3.exe";
-  const downloadUrl = `https://techapps.vercel.app/downloads/${downloadFile}`;
+  const siteUrl = process.env.SITE_URL || "https://truelegendcustoms.vercel.app";
+  const downloadUrl = `${siteUrl}/downloads/${downloadFile}`;
   const purchaseDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   const info = await transporter.sendMail({
