@@ -796,6 +796,21 @@ body::before {
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
 }
 
+/* Trail Style 5: Tron Line */
+.cursor-trail.tron .cursor-dot {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, 
+    rgba(0, 255, 255, 0) 0%, 
+    rgba(0, 255, 255, 0.9) 50%, 
+    rgba(0, 255, 255, 0) 100%);
+  box-shadow: 
+    0 0 10px rgba(0, 255, 255, 0.8),
+    0 0 20px rgba(0, 255, 255, 0.5),
+    0 0 30px rgba(0, 255, 255, 0.3);
+}
+
 /* Decorative Elements */
 .petals {
   display: none;

@@ -444,7 +444,7 @@ function initCursorTrail() {
   let mouseY = window.innerHeight / 2;
   let hue = 0;
   let currentStyle = 0;
-  const trailStyles = ['', 'fire', 'rainbow', 'stars'];
+  const trailStyles = ['', 'fire', 'rainbow', 'stars', 'tron'];
 
   // Add click handler to tech circle to cycle trail styles
   const techCircle = document.querySelector('.tech-circle');
