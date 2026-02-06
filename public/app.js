@@ -468,6 +468,9 @@ function initCursorTrail() {
     requestAnimationFrame(animate);
   }
 
+  animate();
+}
+
 async function loadReviews() {
   try {
     const response = await fetch('/api/reviews');
@@ -503,4 +506,11 @@ async function loadReviews() {
     console.error('Error loading reviews:', error);
   }
 }
-}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadConfig();
+  renderApps();
+  createPetals();
+  initCursorTrail();
+  loadReviews();
+});
