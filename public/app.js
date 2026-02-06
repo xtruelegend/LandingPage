@@ -511,7 +511,7 @@ function initCursorTrail() {
         dot.el.style.background = 'radial-gradient(circle, rgba(0, 209, 255, 0.9), rgba(0, 209, 255, 0.2))';
         dot.el.style.boxShadow = '0 0 12px rgba(0, 209, 255, 0.6)';
       } else if (colorMode === 1) {
-        // Rainbow gradient effect
+        // Rainbow gradient effect - each dot different color
         dot.el.style.filter = '';
         const colorIndex = Math.floor((index / dots.length) * rainbowColors.length);
         const rainbowColor = rainbowColors[colorIndex];
@@ -519,10 +519,13 @@ function initCursorTrail() {
         dot.el.style.background = `radial-gradient(circle, rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.9), rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.2))`;
         dot.el.style.boxShadow = `0 0 12px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.6)`;
       } else if (colorMode === 2) {
-        // Black dots
+        // Solid color gradient that changes over time
         dot.el.style.filter = '';
-        dot.el.style.background = 'radial-gradient(circle, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.2))';
-        dot.el.style.boxShadow = '0 0 12px rgba(0, 0, 0, 0.6)';
+        const solidColorIndex = Math.floor((hue / 360) * rainbowColors.length) % rainbowColors.length;
+        const solidColor = rainbowColors[solidColorIndex];
+        const rgb = solidColor.match(/\d+/g);
+        dot.el.style.background = `radial-gradient(circle, rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.9), rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.2))`;
+        dot.el.style.boxShadow = `0 0 12px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.6)`;
       }
       
       x = dot.x;
