@@ -437,6 +437,7 @@ function initCursorTrail() {
   let mouseY = window.innerHeight / 2;
   let hue = 0;
   let trailLength = 12;
+  let colorMode = 0; // 0: hue-rotate, 1: rainbow gradient
 
   // Default trail: 12 following dots
   const dots = Array.from({ length: trailLength }, () => {
@@ -446,13 +447,16 @@ function initCursorTrail() {
     return { el: dot, x: 0, y: 0 };
   });
 
-  // Add click handler to tech circle to toggle trail length
+  // Add click handler to tech circle to toggle trail length and color mode
   const techCircle = document.querySelector('.tech-circle');
   if (techCircle) {
     techCircle.style.cursor = 'pointer';
     techCircle.addEventListener('click', () => {
       // Toggle between 12 and 24 dots
       trailLength = trailLength === 12 ? 24 : 12;
+      
+      // Cycle color mode
+      colorMode = (colorMode + 1) % 2;
       
       // Clear existing dots
       dots.length = 0;
@@ -484,13 +488,37 @@ function initCursorTrail() {
     let y = mouseY;
     hue = (hue + 0.5) % 360;
 
+    const rainbowColors = [
+      'hsl(0, 100%, 50%)',     // Red
+      'hsl(30, 100%, 50%)',    // Orange
+      'hsl(60, 100%, 50%)',    // Yellow
+      'hsl(120, 100%, 50%)',   // Green
+      'hsl(180, 100%, 50%)',   // Cyan
+      'hsl(240, 100%, 50%)',   // Blue
+      'hsl(270, 100%, 50%)',   // Purple
+    ];
+
     dots.forEach((dot, index) => {
       dot.x += (x - dot.x) * 0.2;
       dot.y += (y - dot.y) * 0.2;
       dot.el.style.left = `${dot.x}px`;
       dot.el.style.top = `${dot.y}px`;
       dot.el.style.opacity = `${1 - index / dots.length}`;
-      dot.el.style.filter = `hue-rotate(${hue + index * 30}deg)`;
+      
+      if (colorMode === 0) {
+        // Hue-rotate effect
+        dot.el.style.filter = `hue-rotate(${hue + index * 30}deg)`;
+        dot.el.style.background = 'radial-gradient(circle, rgba(0, 209, 255, 0.9), rgba(0, 209, 255, 0.2))';
+      } else {
+        // Rainbow gradient effect
+        dot.el.style.filter = '';
+        const colorIndex = Math.floor((index / dots.length) * rainbowColors.length);
+        const rainbowColor = rainbowColors[colorIndex];
+        const rgb = rainbowColor.match(/\d+/g);
+        dot.el.style.background = `radial-gradient(circle, rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.9), rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.2))`;
+        dot.el.style.boxShadow = `0 0 12px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.6)`;
+      }
+      
       x = dot.x;
       y = dot.y;
     });
