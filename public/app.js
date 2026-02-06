@@ -511,14 +511,15 @@ function initCursorTrail() {
         dot.el.style.background = 'radial-gradient(circle, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.3))';
         dot.el.style.boxShadow = '0 0 12px rgba(0, 0, 0, 0.8)';
       } else if (colorMode === 1) {
-        // Rainbow dots - each dot different color
+        // Rainbow dots - each dot shifts through colors
         dot.el.style.filter = '';
-        const colorIndex = Math.floor((index / dots.length) * rainbowColors.length);
+        const shiftedHue = (hue + index * 51.4) % 360; // Shift each dot's hue
+        const colorIndex = Math.floor((shiftedHue / 60) % rainbowColors.length);
         const color = rainbowColors[colorIndex];
         dot.el.style.background = `radial-gradient(circle, rgba(${color.r}, ${color.g}, ${color.b}, 0.9), rgba(${color.r}, ${color.g}, ${color.b}, 0.2))`;
         dot.el.style.boxShadow = `0 0 12px rgba(${color.r}, ${color.g}, ${color.b}, 0.6)`;
       } else if (colorMode === 2) {
-        // Solid cycling dots - all same color changing together
+        // Solid cycling dots - all same color changing together through rainbow gradient
         dot.el.style.filter = '';
         const colorIndex = Math.floor((hue / 60) % rainbowColors.length);
         const color = rainbowColors[colorIndex];
