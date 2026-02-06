@@ -437,7 +437,7 @@ function initCursorTrail() {
   let mouseY = window.innerHeight / 2;
   let hue = 0;
   let trailLength = 12;
-  let colorMode = 0; // 0: hue-rotate, 1: rainbow gradient, 2: black
+  let colorMode = 0; // 0: black dots, 1: rainbow dots (each different), 2: solid cycling dots
 
   // Default trail: 12 following dots
   const dots = Array.from({ length: trailLength }, () => {
@@ -506,19 +506,19 @@ function initCursorTrail() {
       dot.el.style.opacity = `${1 - index / dots.length}`;
       
       if (colorMode === 0) {
-        // Hue-rotate effect
-        dot.el.style.filter = `hue-rotate(${hue + index * 30}deg)`;
-        dot.el.style.background = 'radial-gradient(circle, rgba(0, 209, 255, 0.9), rgba(0, 209, 255, 0.2))';
-        dot.el.style.boxShadow = '0 0 12px rgba(0, 209, 255, 0.6)';
+        // Black dots that glow
+        dot.el.style.filter = '';
+        dot.el.style.background = 'radial-gradient(circle, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.3))';
+        dot.el.style.boxShadow = '0 0 12px rgba(0, 0, 0, 0.8)';
       } else if (colorMode === 1) {
-        // Rainbow gradient effect - each dot different color
+        // Rainbow dots - each dot different color
         dot.el.style.filter = '';
         const colorIndex = Math.floor((index / dots.length) * rainbowColors.length);
         const color = rainbowColors[colorIndex];
         dot.el.style.background = `radial-gradient(circle, rgba(${color.r}, ${color.g}, ${color.b}, 0.9), rgba(${color.r}, ${color.g}, ${color.b}, 0.2))`;
         dot.el.style.boxShadow = `0 0 12px rgba(${color.r}, ${color.g}, ${color.b}, 0.6)`;
       } else if (colorMode === 2) {
-        // All dots same solid color that cycles through rainbow
+        // Solid cycling dots - all same color changing together
         dot.el.style.filter = '';
         const colorIndex = Math.floor((hue / 60) % rainbowColors.length);
         const color = rainbowColors[colorIndex];
