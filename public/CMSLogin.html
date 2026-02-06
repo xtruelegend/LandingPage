@@ -200,6 +200,14 @@
         <p style="color: #666; margin-bottom: 20px;">Edit, unpublish, or delete live reviews.</p>
         <div id="approvedReviewsContainer"></div>
       </div>
+
+      <!-- Reported Issues -->
+      <div class="admin-section">
+        <h2>📋 Reported Issues</h2>
+        <p style="color: #666; margin-bottom: 12px;">View and resolve customer-reported issues from the website.</p>
+        <button class="btn btn-primary" onclick="loadReportedIssues()" style="margin-bottom: 12px;">Refresh Issues</button>
+        <div id="issuesContainer"></div>
+      </div>
     </div>
 
     <script>
@@ -248,6 +256,7 @@
         document.getElementById('adminDashboard').style.display = 'block';
         loadPendingReviews();
         loadApprovedReviews();
+        loadReportedIssues();
       }
 
       function logout() {
@@ -672,6 +681,81 @@
         }
       }
       
+      async function loadReportedIssues() {
+        const container = document.getElementById('issuesContainer');
+        container.innerHTML = '<p>Loading reported issues...</p>';
+
+        try {
+          const response = await fetch('/api/admin/issues', {
+            headers: adminHeaders()
+          });
+
+          if (response.status === 401) {
+            logout();
+            return;
+          }
+
+          const data = await response.json();
+
+          if (!data.issues || data.issues.length === 0) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <div style="font-size: 64px; margin-bottom: 16px;">✅</div>
+                <h3>No Reported Issues</h3>
+                <p>All issues have been resolved.</p>
+              </div>
+            `;
+            return;
+          }
+
+          container.innerHTML = data.issues.map(issue => `
+            <div class="review-item" id="issue-${issue.id}">
+              <div class="review-header">
+                <div>
+                  <strong>${issue.name}</strong>
+                  <br>
+                  <small style="color: #666;">${issue.email} • ${new Date(issue.date).toLocaleDateString()}</small>
+                </div>
+              </div>
+              <div class="review-text">
+                ${issue.issue}
+              </div>
+              <div class="review-actions">
+                <button class="btn btn-approve" onclick="resolveIssue('${issue.id}')">✓ Resolve</button>
+              </div>
+            </div>
+          `).join('');
+        } catch (error) {
+          container.innerHTML = '<p style="color: red;">Error loading issues. Please try again.</p>';
+          console.error('Load issues error:', error);
+        }
+      }
+
+      async function resolveIssue(issueId) {
+        if (!confirm('Mark this issue as resolved?')) return;
+
+        try {
+          const response = await fetch('/api/admin/resolve-issue', {
+            method: 'POST',
+            headers: adminHeaders(),
+            body: JSON.stringify({ issueId })
+          });
+
+          if (response.ok) {
+            document.getElementById(`issue-${issueId}`).remove();
+            const remaining = document.querySelectorAll('#issuesContainer .review-item').length;
+            if (remaining === 0) {
+              loadReportedIssues();
+            }
+          } else {
+            alert('Error resolving issue');
+          }
+        } catch (error) {
+          alert('Error resolving issue');
+          console.error('Resolve issue error:', error);
+        }
+      }
+
       checkAuth();
       
       setInterval(() => {

@@ -1440,7 +1440,9 @@ app.post("/api/admin/send-key-report", async (req, res) => {
     if (!authorized) return;
 
     if (!ADMIN_REPORT_EMAIL) {
-      return res.status(400).json({ error: "ADMIN_REPORT_EMAIL not set" });
+      return res.status(400).json({ 
+        error: "ADMIN_REPORT_EMAIL environment variable not configured. Please set it in your .env file or Vercel environment variables." 
+      });
     }
 
     const redis = await getRedisClient();
