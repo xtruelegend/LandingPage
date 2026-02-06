@@ -179,7 +179,7 @@
       <!-- Active Keys -->
       <div class="admin-section">
         <h2>🔑 Active Keys</h2>
-        <p style="color: #666; margin-bottom: 12px;">View active keys, email yourself a report, or deactivate and reissue.</p>
+        <p style="color: #666; margin-bottom: 12px;">View active keys, email yourself a report, or deactivate and reissue (manual send).</p>
         <div style="display:flex; gap:12px; margin-bottom: 12px;">
           <button class="btn btn-primary" onclick="loadActiveKeys()">Refresh List</button>
           <button class="btn btn-primary" onclick="sendKeyReport()">Email Me Active Keys</button>
@@ -662,7 +662,7 @@
           const data = await response.json();
 
           if (response.ok) {
-            resultDiv.innerHTML = `<div class="success-message">✓ New key sent: ${data.newKey}</div>`;
+            resultDiv.innerHTML = `<div class="success-message">✓ New key created (not emailed): ${data.newKey}</div>`;
             loadActiveKeys();
           } else {
             resultDiv.innerHTML = `<div class="error-message">✗ ${data.error || 'Failed to reissue key'}</div>`;

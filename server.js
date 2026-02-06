@@ -1508,9 +1508,7 @@ app.post("/api/admin/deactivate-key", async (req, res) => {
 
     await redis.set(purchaseKey, JSON.stringify(updatedList));
 
-    // Send updated key to customer
-    await sendKeyEmail(email, newKey, appName);
-
+    // Do NOT email automatically; admin will send manually
     res.json({ success: true, newKey });
   } catch (error) {
     console.error("Deactivate key error:", error);
