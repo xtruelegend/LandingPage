@@ -451,7 +451,7 @@ async function sendKeyEmail(to, licenseKey, appName, orderDetails = {}) {
           </div>
 
           <hr style="border: none; border-top: 1px solid #ddd; margin: 32px 0;">
-          <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 TechApps. All rights reserved.</p>
+          <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Truelegendcustoms. All rights reserved.</p>
         </div>
       </div>
     `
@@ -1124,6 +1124,50 @@ app.post("/api/submit-review", async (req, res) => {
   }
 });
 
+// Report issue endpoint
+app.post("/api/report-issue", async (req, res) => {
+  try {
+    const { name, email, issue } = req.body;
+
+    if (!name || !email || !issue) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    if (!HAS_REST && !HAS_REDIS) {
+      return res.status(500).json({ error: "Issue storage not configured" });
+    }
+
+    const report = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      issue: issue.trim(),
+      date: new Date().toISOString()
+    };
+
+    let issues = [];
+    try {
+      const stored = await kvStore.get("reported_issues");
+      if (stored) {
+        issues = typeof stored === "string" ? JSON.parse(stored) : Array.isArray(stored) ? stored : [];
+      }
+    } catch (e) {
+      console.error("Error loading issues:", e.message);
+    }
+
+    issues.push(report);
+    const saved = await kvStore.set("reported_issues", JSON.stringify(issues));
+    if (!saved) {
+      return res.status(500).json({ error: "Failed to save issue" });
+    }
+
+    res.json({ success: true, message: "Issue submitted successfully" });
+  } catch (error) {
+    console.error("Submit review error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get approved reviews endpoint
 app.get("/api/reviews", async (req, res) => {
   try {
@@ -1659,6 +1703,43 @@ app.post("/api/admin/rotate-keys", async (req, res) => {
     });
   } catch (error) {
     console.error("Rotate keys error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Get reported issues
+app.get("/api/admin/issues", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    const stored = await kvStore.get("reported_issues");
+    const issues = stored ? (typeof stored === "string" ? JSON.parse(stored) : stored) : [];
+    res.json({ issues });
+  } catch (error) {
+    console.error("Get issues error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Resolve (remove) issue
+app.post("/api/admin/resolve-issue", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    const { issueId } = req.body;
+    if (!issueId) {
+      return res.status(400).json({ error: "Issue ID required" });
+    }
+
+    const stored = await kvStore.get("reported_issues");
+    const issues = stored ? (typeof stored === "string" ? JSON.parse(stored) : stored) : [];
+    const updated = issues.filter((i) => i.id !== issueId);
+    await kvStore.set("reported_issues", JSON.stringify(updated));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Resolve issue error:", error);
     res.status(500).json({ error: error.message });
   }
 });
