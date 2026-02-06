@@ -1097,6 +1097,15 @@ app.post("/api/admin/send-key", async (req, res) => {
       return res.status(400).json({ error: "Email and app name are required" });
     }
 
+    // Check if email is blacklisted
+    const stored = await kvStore.get("blacklisted_emails");
+    const blacklist = stored ? (typeof stored === "string" ? JSON.parse(stored) : stored) : [];
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    if (blacklist.includes(normalizedEmail)) {
+      return res.status(403).json({ error: "This email is blacklisted and cannot receive keys" });
+    }
+
     const licenseKey = await getPooledLicenseKey();
     if (!licenseKey) {
       return res.status(500).json({ error: "No license keys available in pool" });
@@ -1873,6 +1882,74 @@ app.post("/api/admin/resolve-issue", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Resolve issue error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Blacklist email
+app.post("/api/admin/blacklist-email", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email required" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const stored = await kvStore.get("blacklisted_emails");
+    const blacklist = stored ? (typeof stored === "string" ? JSON.parse(stored) : stored) : [];
+    
+    if (!blacklist.includes(normalizedEmail)) {
+      blacklist.push(normalizedEmail);
+      await kvStore.set("blacklisted_emails", JSON.stringify(blacklist));
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Blacklist email error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Get blacklist
+app.get("/api/admin/blacklist", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    const stored = await kvStore.get("blacklisted_emails");
+    const blacklist = stored ? (typeof stored === "string" ? JSON.parse(stored) : stored) : [];
+
+    res.json({ blacklist });
+  } catch (error) {
+    console.error("Get blacklist error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Remove from blacklist
+app.post("/api/admin/remove-blacklist", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email required" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const stored = await kvStore.get("blacklisted_emails");
+    const blacklist = stored ? (typeof stored === "string" ? JSON.parse(stored) : stored) : [];
+    
+    const updated = blacklist.filter(e => e !== normalizedEmail);
+    await kvStore.set("blacklisted_emails", JSON.stringify(updated));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Remove blacklist error:", error);
     res.status(500).json({ error: error.message });
   }
 });
