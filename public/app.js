@@ -433,6 +433,14 @@ function initCursorTrail() {
   trailContainer.className = "cursor-trail";
   document.body.appendChild(trailContainer);
 
+  let mouseX = window.innerWidth / 2;
+  let mouseY = window.innerHeight / 2;
+  let currentStyle = 0;
+  const trailStyles = ['default', 'draw', 'particle', 'stars', 'tron'];
+  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE'];
+  let colorIndex = 0;
+
+  // Default trail: 12 following dots
   const dots = Array.from({ length: 12 }, () => {
     const dot = document.createElement("div");
     dot.className = "cursor-dot";
@@ -440,11 +448,19 @@ function initCursorTrail() {
     return { el: dot, x: 0, y: 0 };
   });
 
-  let mouseX = window.innerWidth / 2;
-  let mouseY = window.innerHeight / 2;
-  let hue = 0;
-  let currentStyle = 0;
-  const trailStyles = ['', 'fire', 'rainbow', 'stars', 'tron'];
+  // Draw trail: persistent dots that fade out
+  const drawTrails = [];
+
+  // Particle trail: falling particles
+  const particles = [];
+
+  // Star trail: clicked stars that change color
+  const starTrails = [];
+
+  // Tron trail: single line following cursor
+  const tronLine = document.createElement("div");
+  tronLine.className = "cursor-dot tron-line";
+  trailContainer.appendChild(tronLine);
 
   // Add click handler to tech circle to cycle trail styles
   const techCircle = document.querySelector('.tech-circle');
@@ -462,32 +478,98 @@ function initCursorTrail() {
     });
   }
 
+  // Click handler for stars style
+  document.addEventListener('click', (event) => {
+    if (trailStyles[currentStyle] === 'stars') {
+      const star = document.createElement('div');
+      star.className = 'click-star';
+      star.style.left = event.clientX + 'px';
+      star.style.top = event.clientY + 'px';
+      star.style.color = colors[colorIndex % colors.length];
+      colorIndex++;
+      star.textContent = '⭐';
+      trailContainer.appendChild(star);
+      starTrails.push({ el: star, time: 0 });
+      
+      setTimeout(() => {
+        star.remove();
+        starTrails.shift();
+      }, 3000);
+    }
+  });
+
   window.addEventListener("mousemove", (event) => {
     mouseX = event.clientX;
     mouseY = event.clientY;
+
+    // Create particle on mouse move for particle style
+    if (trailStyles[currentStyle] === 'particle') {
+      const particle = document.createElement('div');
+      particle.className = 'falling-particle';
+      particle.style.left = mouseX + 'px';
+      particle.style.top = mouseY + 'px';
+      particle.style.color = colors[Math.floor(Math.random() * colors.length)];
+      particle.textContent = '❄️';
+      trailContainer.appendChild(particle);
+      particles.push({ el: particle, time: 0 });
+    }
+
+    // Create draw trail for draw style
+    if (trailStyles[currentStyle] === 'draw') {
+      const drawDot = document.createElement('div');
+      drawDot.className = 'draw-dot';
+      drawDot.style.left = mouseX + 'px';
+      drawDot.style.top = mouseY + 'px';
+      trailContainer.appendChild(drawDot);
+      drawTrails.push({ el: drawDot, time: 0 });
+    }
   });
 
   function animate() {
     let x = mouseX;
     let y = mouseY;
-    hue = (hue + 0.3) % 360;
 
-    dots.forEach((dot, index) => {
-      dot.x += (x - dot.x) * 0.2;
-      dot.y += (y - dot.y) * 0.2;
-      dot.el.style.left = `${dot.x}px`;
-      dot.el.style.top = `${dot.y}px`;
-      dot.el.style.opacity = `${1 - index / dots.length}`;
-      
-      // Apply hue rotation only for rainbow style
-      if (trailStyles[currentStyle] === 'rainbow') {
-        dot.el.style.filter = `hue-rotate(${hue + index * 30}deg)`;
-      } else {
-        dot.el.style.filter = '';
+    // Default style: following dots
+    if (trailStyles[currentStyle] === 'default') {
+      dots.forEach((dot, index) => {
+        dot.x += (x - dot.x) * 0.2;
+        dot.y += (y - dot.y) * 0.2;
+        dot.el.style.left = `${dot.x}px`;
+        dot.el.style.top = `${dot.y}px`;
+        dot.el.style.opacity = `${1 - index / dots.length}`;
+        x = dot.x;
+        y = dot.y;
+      });
+    }
+
+    // Tron style: single line
+    if (trailStyles[currentStyle] === 'tron') {
+      tronLine.style.left = `${mouseX}px`;
+      tronLine.style.top = `${mouseY}px`;
+      tronLine.style.opacity = '1';
+    }
+
+    // Update draw trail fade
+    drawTrails.forEach((item, index) => {
+      item.time += 16; // ~60fps
+      const progress = item.time / 90000; // 90 second duration
+      item.el.style.opacity = Math.max(0, 1 - progress);
+      if (progress >= 1) {
+        item.el.remove();
+        drawTrails.splice(index, 1);
       }
-      
-      x = dot.x;
-      y = dot.y;
+    });
+
+    // Update falling particles
+    particles.forEach((item, index) => {
+      item.time += 16;
+      const progress = item.time / 3000; // 3 second duration
+      item.el.style.transform = `translateY(${progress * 100}px)`;
+      item.el.style.opacity = Math.max(0, 1 - progress);
+      if (progress >= 1) {
+        item.el.remove();
+        particles.splice(index, 1);
+      }
     });
 
     requestAnimationFrame(animate);

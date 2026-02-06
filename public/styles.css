@@ -775,40 +775,69 @@ body::before {
   will-change: filter;
 }
 
-/* Trail Style 2: Fire */
-.cursor-trail.fire .cursor-dot {
-  background: radial-gradient(circle, rgba(255, 100, 0, 0.9), rgba(255, 50, 0, 0.2));
-  box-shadow: 0 0 15px rgba(255, 100, 0, 0.8), 0 0 25px rgba(255, 50, 0, 0.4);
-}
-
-/* Trail Style 3: Rainbow */
-.cursor-trail.rainbow .cursor-dot {
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.2));
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
-}
-
-/* Trail Style 4: Stars */
-.cursor-trail.stars .cursor-dot {
-  width: 8px;
-  height: 8px;
-  background: radial-gradient(circle, rgba(255, 255, 100, 0.95), rgba(255, 255, 200, 0.3));
-  box-shadow: 0 0 10px rgba(255, 255, 100, 0.8), 0 0 20px rgba(255, 255, 200, 0.4);
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-}
-
-/* Trail Style 5: Tron Line */
-.cursor-trail.tron .cursor-dot {
-  width: 20px;
+/* Draw Trail: Black dots that fade over 90 seconds */
+.draw-dot {
+  position: absolute;
+  width: 3px;
   height: 3px;
-  border-radius: 2px;
+  border-radius: 50%;
+  background: #000000;
+  transform: translate(-50%, -50%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Falling Particles: Multicolor snowflakes */
+.falling-particle {
+  position: absolute;
+  font-size: 16px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: fall 3s ease-in forwards;
+}
+
+@keyframes fall {
+  to {
+    transform: translate(-50%, 100px);
+    opacity: 0;
+  }
+}
+
+/* Click Stars: Color-changing stars that appear for 3 seconds */
+.click-star {
+  position: absolute;
+  font-size: 24px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: star-pulse 3s ease-out forwards;
+}
+
+@keyframes star-pulse {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+}
+
+/* Tron Line: Single neon cyan line */
+.tron-line {
+  width: 20px !important;
+  height: 3px !important;
+  border-radius: 2px !important;
   background: linear-gradient(90deg, 
     rgba(0, 255, 255, 0) 0%, 
     rgba(0, 255, 255, 0.9) 50%, 
-    rgba(0, 255, 255, 0) 100%);
+    rgba(0, 255, 255, 0) 100%) !important;
   box-shadow: 
     0 0 10px rgba(0, 255, 255, 0.8),
     0 0 20px rgba(0, 255, 255, 0.5),
-    0 0 30px rgba(0, 255, 255, 0.3);
+    0 0 30px rgba(0, 255, 255, 0.3) !important;
+  opacity: 1 !important;
+  transition: none !important;
 }
 
 /* Decorative Elements */
