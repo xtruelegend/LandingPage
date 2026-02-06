@@ -127,8 +127,11 @@ function renderApps() {
   };
 
   const cards = APPS.map(renderCard).join("");
-  grid.innerHTML = `${cards}${cards}${cards}`;
-  initCarousel();
+  const isMobile = window.innerWidth <= 768;
+  grid.innerHTML = isMobile ? cards : `${cards}${cards}${cards}`;
+  if (!isMobile) {
+    initCarousel();
+  }
   updateLaunchPricing();
 }
 
