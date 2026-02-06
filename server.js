@@ -308,25 +308,19 @@ async function saveLicenseKey(record) {
     return;
   }
 
-  console.log(`[saveLicenseKey] Saving purchase for ${record.email}:`, {
-    licenseKey: record.licenseKey,
-    product: record.product,
-    orderId: record.orderId
-  });
-
   try {
     const normalizedEmail = record.email.toLowerCase().trim();
-    console.log(`[saveLicenseKey] Normalized email: ${normalizedEmail}`);
+
     
     const purchases = await kvStore.get(`purchases:${normalizedEmail}`);
-    console.log(`[saveLicenseKey] Existing purchases from Redis:`, purchases);
+
     
     let purchasesList = [];
 
     if (purchases) {
       try {
         purchasesList = typeof purchases === "string" ? JSON.parse(purchases) : Array.isArray(purchases) ? purchases : [];
-        console.log(`[saveLicenseKey] Parsed existing purchases, count: ${purchasesList.length}`);
+
       } catch (e) {
         console.error("Error parsing existing purchases:", e.message);
         purchasesList = [];
@@ -343,7 +337,6 @@ async function saveLicenseKey(record) {
 
     purchasesList.push(newPurchase);
     await kvStore.set(`purchases:${normalizedEmail}`, JSON.stringify(purchasesList));
-    console.log(`Purchase saved for ${normalizedEmail} in Redis`);
     
     // Track this key as issued globally to prevent duplicates
     try {
@@ -355,7 +348,6 @@ async function saveLicenseKey(record) {
       if (!keysList.includes(record.licenseKey.toUpperCase())) {
         keysList.push(record.licenseKey.toUpperCase());
         await kvStore.set("issued_keys", JSON.stringify(keysList));
-        console.log(`License key ${record.licenseKey} marked as issued in Redis`);
       }
     } catch (err) {
       console.error("Error tracking issued key in Redis:", err.message);

@@ -561,12 +561,8 @@ async function loadReviews() {
       const grid = document.getElementById('testimonialsGrid');
       if (!grid) return;
       
-      // Clear only the dynamically added reviews (keep the first 3 default cards)
-      const allCards = grid.querySelectorAll('.testimonial-card');
-      const defaultCount = 3; // Number of hardcoded default testimonials
-      for (let i = allCards.length - 1; i >= defaultCount; i--) {
-        allCards[i].remove();
-      }
+      // Clear all existing reviews (HTML grid is now empty by default)
+      grid.innerHTML = '';
       
       // Add real reviews to the grid (limit to 6 total)
       const limit = Math.min(data.reviews.length, 6);
