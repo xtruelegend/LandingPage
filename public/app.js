@@ -435,23 +435,37 @@ function initCursorTrail() {
 
   let mouseX = window.innerWidth / 2;
   let mouseY = window.innerHeight / 2;
-  let currentStyle = 0;
-  const trailStyles = ['default'];
   let hue = 0;
+  let trailLength = 12;
 
   // Default trail: 12 following dots
-  const dots = Array.from({ length: 12 }, () => {
+  const dots = Array.from({ length: trailLength }, () => {
     const dot = document.createElement("div");
     dot.className = "cursor-dot";
     trailContainer.appendChild(dot);
     return { el: dot, x: 0, y: 0 };
   });
 
-  // Add click handler to tech circle to cycle trail styles
+  // Add click handler to tech circle to toggle trail length
   const techCircle = document.querySelector('.tech-circle');
   if (techCircle) {
     techCircle.style.cursor = 'pointer';
     techCircle.addEventListener('click', () => {
+      // Toggle between 12 and 24 dots
+      trailLength = trailLength === 12 ? 24 : 12;
+      
+      // Clear existing dots
+      dots.length = 0;
+      trailContainer.querySelectorAll('.cursor-dot').forEach(dot => dot.remove());
+      
+      // Add new dots
+      Array.from({ length: trailLength }, () => {
+        const dot = document.createElement("div");
+        dot.className = "cursor-dot";
+        trailContainer.appendChild(dot);
+        return { el: dot, x: 0, y: 0 };
+      }).forEach(dot => dots.push(dot));
+      
       // Visual feedback
       techCircle.style.transform = 'scale(0.95)';
       setTimeout(() => {
