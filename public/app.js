@@ -443,6 +443,24 @@ function initCursorTrail() {
   let mouseX = window.innerWidth / 2;
   let mouseY = window.innerHeight / 2;
   let hue = 0;
+  let currentStyle = 0;
+  const trailStyles = ['', 'fire', 'rainbow', 'stars'];
+
+  // Add click handler to tech circle to cycle trail styles
+  const techCircle = document.querySelector('.tech-circle');
+  if (techCircle) {
+    techCircle.style.cursor = 'pointer';
+    techCircle.addEventListener('click', () => {
+      currentStyle = (currentStyle + 1) % trailStyles.length;
+      trailContainer.className = `cursor-trail ${trailStyles[currentStyle]}`;
+      
+      // Visual feedback
+      techCircle.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        techCircle.style.transform = '';
+      }, 150);
+    });
+  }
 
   window.addEventListener("mousemove", (event) => {
     mouseX = event.clientX;
@@ -460,7 +478,14 @@ function initCursorTrail() {
       dot.el.style.left = `${dot.x}px`;
       dot.el.style.top = `${dot.y}px`;
       dot.el.style.opacity = `${1 - index / dots.length}`;
-      dot.el.style.filter = `hue-rotate(${hue}deg)`;
+      
+      // Apply hue rotation only for rainbow style
+      if (trailStyles[currentStyle] === 'rainbow') {
+        dot.el.style.filter = `hue-rotate(${hue + index * 30}deg)`;
+      } else {
+        dot.el.style.filter = '';
+      }
+      
       x = dot.x;
       y = dot.y;
     });

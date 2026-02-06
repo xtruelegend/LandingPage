@@ -253,8 +253,10 @@ body::before {
   box-shadow:
     0 20px 60px rgba(0, 209, 255, 0.25),
     inset 0 0 80px rgba(0, 209, 255, 0.15);
-  animation: pulse 3s ease-in-out infinite;
+  animation: pulse 4s ease-in-out infinite;
   position: relative;
+  transition: transform 0.15s ease;
+  user-select: none;
 }
 
 .tech-circle::before {
@@ -280,7 +282,7 @@ body::before {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0% {
     transform: scale(1);
     opacity: 1;
     border-color: #00d1ff;
@@ -288,25 +290,41 @@ body::before {
       0 20px 60px rgba(0, 209, 255, 0.25),
       inset 0 0 80px rgba(0, 209, 255, 0.15);
   }
-  25% {
+  20% {
+    transform: scale(1.03);
+    border-color: #00ff88;
+    box-shadow:
+      0 20px 60px rgba(0, 255, 136, 0.35),
+      inset 0 0 80px rgba(0, 255, 136, 0.25);
+  }
+  40% {
+    transform: scale(1.05);
+    opacity: 0.95;
+    border-color: #ffaa00;
+    box-shadow:
+      0 20px 60px rgba(255, 170, 0, 0.4),
+      inset 0 0 80px rgba(255, 170, 0, 0.2);
+  }
+  60% {
+    transform: scale(1.03);
+    border-color: #ff00ff;
+    box-shadow:
+      0 20px 60px rgba(255, 0, 255, 0.35),
+      inset 0 0 80px rgba(255, 0, 255, 0.15);
+  }
+  80% {
+    border-color: #ff0080;
+    box-shadow:
+      0 20px 60px rgba(255, 0, 128, 0.35),
+      inset 0 0 80px rgba(255, 0, 128, 0.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
     border-color: #00d1ff;
     box-shadow:
-      0 20px 60px rgba(0, 209, 255, 0.35),
-      inset 0 0 80px rgba(0, 209, 255, 0.25);
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.9;
-    border-color: #00a8ff;
-    box-shadow:
-      0 20px 60px rgba(0, 168, 255, 0.4),
-      inset 0 0 80px rgba(0, 168, 255, 0.2);
-  }
-  75% {
-    border-color: #0080ff;
-    box-shadow:
-      0 20px 60px rgba(0, 128, 255, 0.35),
-      inset 0 0 80px rgba(0, 128, 255, 0.15);
+      0 20px 60px rgba(0, 209, 255, 0.25),
+      inset 0 0 80px rgba(0, 209, 255, 0.15);
   }
 }
 
@@ -755,6 +773,27 @@ body::before {
   opacity: 0.8;
   transition: opacity 0.2s ease;
   will-change: filter;
+}
+
+/* Trail Style 2: Fire */
+.cursor-trail.fire .cursor-dot {
+  background: radial-gradient(circle, rgba(255, 100, 0, 0.9), rgba(255, 50, 0, 0.2));
+  box-shadow: 0 0 15px rgba(255, 100, 0, 0.8), 0 0 25px rgba(255, 50, 0, 0.4);
+}
+
+/* Trail Style 3: Rainbow */
+.cursor-trail.rainbow .cursor-dot {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.2));
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+}
+
+/* Trail Style 4: Stars */
+.cursor-trail.stars .cursor-dot {
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, rgba(255, 255, 100, 0.95), rgba(255, 255, 200, 0.3));
+  box-shadow: 0 0 10px rgba(255, 255, 100, 0.8), 0 0 20px rgba(255, 255, 200, 0.4);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
 }
 
 /* Decorative Elements */
