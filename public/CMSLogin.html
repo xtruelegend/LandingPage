@@ -756,7 +756,13 @@
         }
       }
 
-      checkAuth();
+      // On page load, show login by default
+      showLogin();
+      
+      // If there's a stored token, try to verify it
+      if (authToken) {
+        checkAuth();
+      }
       
       setInterval(() => {
         if (authToken) {
