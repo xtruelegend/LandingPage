@@ -411,6 +411,20 @@
 
           const data = await response.json();
 
+          // Get display status
+          let displayStatus = [];
+          try {
+            const statusResponse = await fetch('/api/admin/review-display-status', {
+              headers: adminHeaders()
+            });
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              displayStatus = statusData.displayed || [];
+            }
+          } catch (err) {
+            console.log('Could not load display status');
+          }
+
           if (data.reviews.length === 0) {
             container.innerHTML = `
               <div class="empty-state">
@@ -422,11 +436,20 @@
             return;
           }
 
-          container.innerHTML = data.reviews.map(review => `
-            <div class="review-item" id="approved-${review.id}">
+          const displayedCount = displayStatus.length;
+          const maxDisplay = Math.min(data.reviews.length, 6);
+          container.innerHTML = `
+            <p style="color: #666; margin-bottom: 16px;">
+              <strong style="font-size: 16px;">Displayed on website: ${displayedCount} / ${maxDisplay}</strong>
+            </p>
+          ` + data.reviews.map(review => {
+            const isDisplayed = displayStatus.includes(review.id);
+            return `
+            <div class="review-item" id="approved-${review.id}" style="border-left: 4px solid ${isDisplayed ? '#34c759' : '#ddd'}; padding-left: 16px;">
               <div class="review-header">
                 <div>
                   <strong>${review.name}</strong>
+                  ${isDisplayed ? ' <span style="color: #34c759; font-weight: bold;">● DISPLAYED</span>' : ' <span style="color: #999;">● hidden</span>'}
                   <br>
                   <small style="color: #666;">${review.email} • ${new Date(review.date).toLocaleDateString()}</small>
                 </div>
@@ -439,12 +462,13 @@
               </div>
               <div class="review-actions">
                 <button class="btn btn-primary" onclick="editReview('${review.id}', 'approved')">✎ Edit</button>
-                <button class="btn btn-approve" onclick="toggleReviewDisplay('${review.id}')">👁 Toggle Display</button>
+                <button class="btn ${isDisplayed ? 'btn-delete' : 'btn-approve'}" onclick="toggleReviewDisplay('${review.id}')">${isDisplayed ? '👁 Hide from Site' : '👁 Show on Site'}</button>
                 <button class="btn btn-approve" onclick="unpublishReview('${review.id}')">↩ Unpublish</button>
                 <button class="btn btn-delete" onclick="deleteApprovedReview('${review.id}')">✗ Delete</button>
               </div>
             </div>
-          `).join('');
+          `;
+          }).join('');
         } catch (error) {
           container.innerHTML = '<p style="color: red;">Error loading approved reviews. Please try again.</p>';
           console.error('Load error:', error);

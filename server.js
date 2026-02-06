@@ -385,6 +385,72 @@ const APP_DOWNLOADS = {
   // "AppName": "AppName-Setup-1.0.0.exe"
 };
 
+async function sendResolvedIssueEmail(to, issue) {
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !SMTP_FROM || !to) {
+    return { skipped: true };
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS
+    }
+  });
+
+  const resolvedDate = new Date().toLocaleString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const info = await transporter.sendMail({
+    from: SMTP_FROM,
+    to,
+    subject: `✓ Issue Resolved: ${issue.title || 'Customer Support Ticket'}`,
+    text: `Issue Resolved\n\nResolved: ${resolvedDate}\n\nIssue Details:\nTitle: ${issue.title || 'No title'}\nReported: ${new Date(issue.date).toLocaleString()}\nEmail: ${issue.email || 'Not provided'}\n\nDescription:\n${issue.description}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+        <div style="background: linear-gradient(135deg, #34c759 0%, #28a745 100%); color: white; padding: 32px; border-radius: 8px 8px 0 0; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px;">✓ Issue Resolved</h1>
+          <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Support ticket has been marked as resolved</p>
+        </div>
+        
+        <div style="background: #f9f9f9; padding: 32px; border-radius: 0 0 8px 8px;">
+          <h2 style="color: #333; margin-top: 0;">Resolution Details</h2>
+          
+          <div style="background: white; padding: 20px; border-radius: 6px; margin: 16px 0; border-left: 4px solid #34c759;">
+            <p style="margin: 8px 0;"><strong>Resolved:</strong> ${resolvedDate}</p>
+            <p style="margin: 8px 0;"><strong>Issue ID:</strong> ${issue.id}</p>
+          </div>
+
+          <h2 style="color: #333; margin-top: 24px;">Issue Details</h2>
+          
+          <div style="background: white; padding: 20px; border-radius: 6px; margin: 16px 0; border-left: 4px solid #00d1ff;">
+            <p style="margin: 8px 0;"><strong>Title:</strong> ${issue.title || 'No title provided'}</p>
+            <p style="margin: 8px 0;"><strong>Reported:</strong> ${new Date(issue.date).toLocaleString()}</p>
+            <p style="margin: 8px 0;"><strong>Customer Email:</strong> ${issue.email || 'Not provided'}</p>
+          </div>
+
+          <h3 style="color: #333; margin-top: 24px;">Description</h3>
+          <div style="background: white; padding: 16px; border-radius: 6px; margin: 16px 0;">
+            <p style="margin: 0; color: #666; white-space: pre-wrap;">${issue.description}</p>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #ddd; margin: 32px 0;">
+          <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Truelegendcustoms CMS</p>
+        </div>
+      </div>
+    `
+  });
+
+  return { messageId: info.messageId };
+}
+
 async function sendKeyEmail(to, licenseKey, appName, orderDetails = {}) {
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !SMTP_FROM || !to) {
     return { skipped: true };
@@ -1413,6 +1479,25 @@ app.post("/api/admin/delete-approved-review", async (req, res) => {
 });
 
 // Admin: Toggle review display status
+// Admin: Get display status of all reviews
+app.get("/api/admin/review-display-status", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    let displayedReviews = [];
+    const displayed = await kvStore.get("displayed_reviews");
+    if (displayed) {
+      displayedReviews = typeof displayed === "string" ? JSON.parse(displayed) : Array.isArray(displayed) ? displayed : [];
+    }
+
+    res.json({ displayed: displayedReviews });
+  } catch (error) {
+    console.error("Get review display status error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/api/admin/toggle-review-display", async (req, res) => {
   try {
     const authorized = await requireAdmin(req, res);
@@ -1806,8 +1891,20 @@ app.post("/api/admin/resolve-issue", async (req, res) => {
 
     const stored = await kvStore.get("reported_issues");
     const issues = stored ? (typeof stored === "string" ? JSON.parse(stored) : stored) : [];
+    const resolvedIssue = issues.find((i) => i.id === issueId);
     const updated = issues.filter((i) => i.id !== issueId);
     await kvStore.set("reported_issues", JSON.stringify(updated));
+
+    // Send email notification for resolved issue
+    if (resolvedIssue && SMTP_HOST && SMTP_USER && SMTP_PASS && SMTP_FROM) {
+      try {
+        const adminEmail = process.env.ADMIN_EMAIL || SMTP_USER;
+        await sendResolvedIssueEmail(adminEmail, resolvedIssue);
+      } catch (emailError) {
+        console.error("Failed to send resolved issue email:", emailError);
+      }
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error("Resolve issue error:", error);

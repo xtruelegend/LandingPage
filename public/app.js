@@ -12,7 +12,7 @@ const APPS = [
   {
     id: 1,
     name: "BudgetXT",
-    desc: "Take control of your finances without the overwhelm. Built by someone who gets it—budgeting shouldn't be complicated. Track spending, set goals, and finally see where your money goes. Perfect for real people, not accountants. (Windows PC)",
+    desc: "BudgetXT is my simple, no-drama budgeting app for Windows. Add income, log expenses, and it shows you what's left for the month, clean and easy. No subscriptions, no accounts, no cloud stuff. Your data stays on your PC. Great for freelancers and regular people who just want a clear picture without the extra noise. (For Windows PC) - Early Version",
     price: "14.99",
     icon: "💰",
     status: "available",
