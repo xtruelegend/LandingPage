@@ -208,10 +208,92 @@
         text-decoration: underline;
       }
       
+      .hamburger {
+        display: none;
+      }
+      
       /* Mobile Responsive Styles */
       @media (max-width: 768px) {
         .container {
           padding: 0 16px;
+        }
+        
+        /* Hide cursor effects on mobile */
+        .cursor-trail,
+        .petals {
+          display: none !important;
+        }
+        
+        .header .container {
+          position: relative;
+        }
+        
+        .hamburger {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 8px;
+          z-index: 1000;
+        }
+
+        .hamburger span {
+          display: block;
+          width: 25px;
+          height: 3px;
+          background: var(--text);
+          transition: all 0.3s;
+          border-radius: 2px;
+        }
+
+        .hamburger.active span:nth-child(1) {
+          transform: rotate(45deg) translate(8px, 8px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+          opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+          transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        .nav {
+          position: fixed;
+          top: 70px;
+          left: 0;
+          right: 0;
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(10px);
+          flex-direction: column;
+          padding: 20px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+          transform: translateY(-100%);
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.3s ease;
+          gap: 0;
+          z-index: 999;
+        }
+
+        .nav.active {
+          transform: translateY(0);
+          opacity: 1;
+          visibility: visible;
+        }
+
+        .nav-link {
+          font-size: 16px;
+          padding: 12px 16px;
+          width: 100%;
+          text-align: left;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .nav-link:last-child {
+          border-bottom: none;
         }
         
         .downloads-header h1 {
@@ -283,7 +365,12 @@
     <header class="header">
       <div class="container">
         <div class="logo">⚡ Truelegendcustoms</div>
-        <nav class="nav">
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <nav class="nav" id="nav">
           <a href="/" class="nav-link">Home</a>
           <a href="/#features" class="nav-link">Features</a>
           <a href="/#apps" class="nav-link">Apps</a>
@@ -378,6 +465,34 @@
 
     <script src="app.js"></script>
     <script>
+      // Mobile hamburger menu
+      const hamburger = document.getElementById('hamburger');
+      const nav = document.getElementById('nav');
+      
+      if (hamburger && nav) {
+        hamburger.addEventListener('click', () => {
+          hamburger.classList.toggle('active');
+          nav.classList.toggle('active');
+        });
+
+        // Close menu when clicking a link
+        const navLinks = nav.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+          link.addEventListener('click', () => {
+            hamburger.classList.remove('active');
+            nav.classList.remove('active');
+          });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!hamburger.contains(e.target) && !nav.contains(e.target)) {
+            hamburger.classList.remove('active');
+            nav.classList.remove('active');
+          }
+        });
+      }
+
       async function lookupPurchases() {
         const email = document.getElementById("lookupEmail").value.trim();
         const resultDiv = document.getElementById("lookupResult");

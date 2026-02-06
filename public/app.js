@@ -379,8 +379,39 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Load real user reviews
   loadReviews();
 
-  createPetals();
-  initCursorTrail();
+  // Only create petals and cursor trail on desktop
+  if (window.innerWidth > 768) {
+    createPetals();
+    initCursorTrail();
+  }
+
+  // Mobile hamburger menu
+  const hamburger = document.getElementById('hamburger');
+  const nav = document.getElementById('nav');
+  
+  if (hamburger && nav) {
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('active');
+      nav.classList.toggle('active');
+    });
+
+    // Close menu when clicking a link
+    const navLinks = nav.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        nav.classList.remove('active');
+      });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!hamburger.contains(e.target) && !nav.contains(e.target)) {
+        hamburger.classList.remove('active');
+        nav.classList.remove('active');
+      }
+    });
+  }
 
   // Handle PayPal return (only on pages that have the modal)
   const modal = document.getElementById("appModal");
