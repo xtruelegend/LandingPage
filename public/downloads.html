@@ -207,6 +207,74 @@
       .back-link:hover {
         text-decoration: underline;
       }
+      
+      /* Mobile Responsive Styles */
+      @media (max-width: 768px) {
+        .container {
+          padding: 0 16px;
+        }
+        
+        .downloads-header h1 {
+          font-size: 32px;
+        }
+        
+        .downloads-header p {
+          font-size: 16px;
+        }
+        
+        .license-section {
+          padding: 24px 20px;
+        }
+        
+        .license-section h2 {
+          font-size: 22px;
+        }
+        
+        .license-input,
+        .license-btn {
+          font-size: 16px;
+        }
+        
+        .review-section {
+          padding: 40px 20px;
+        }
+        
+        .review-section h2 {
+          font-size: 24px;
+        }
+        
+        #reviewForm {
+          max-width: 100% !important;
+        }
+        
+        #reviewForm input,
+        #reviewForm textarea,
+        #reviewForm button {
+          font-size: 16px !important; /* Prevents iOS zoom */
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .downloads-header h1 {
+          font-size: 28px;
+        }
+        
+        .license-section {
+          padding: 20px 16px;
+        }
+        
+        .license-section h2 {
+          font-size: 20px;
+        }
+        
+        .review-section {
+          padding: 32px 16px;
+        }
+        
+        .back-link {
+          margin-bottom: 24px;
+        }
+      }
     </style>
   </head>
   <body>

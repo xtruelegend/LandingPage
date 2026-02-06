@@ -299,6 +299,162 @@
         color: #667eea;
         border-bottom-color: #667eea;
       }
+      
+      /* Mobile Responsive Styles */
+      @media (max-width: 1024px) {
+        .admin-container {
+          padding: 16px;
+        }
+        
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        body {
+          font-size: 14px;
+        }
+        
+        .admin-container {
+          padding: 12px;
+        }
+        
+        .login-container {
+          margin: 40px auto;
+          padding: 32px 24px;
+          max-width: 90%;
+        }
+        
+        .login-container h2 {
+          font-size: 24px;
+          margin-bottom: 24px;
+        }
+        
+        .dashboard-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+        }
+        
+        .dashboard-header h1 {
+          font-size: 24px;
+        }
+        
+        .header-actions {
+          width: 100%;
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        .header-actions .btn {
+          width: 100%;
+        }
+        
+        .stats-grid {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        
+        .admin-section {
+          padding: 20px 16px;
+        }
+        
+        .admin-section h2 {
+          font-size: 20px;
+        }
+        
+        .form-row {
+          flex-direction: column;
+          gap: 0;
+        }
+        
+        .btn {
+          padding: 12px 20px;
+          font-size: 14px;
+          width: 100%;
+        }
+        
+        .key-card {
+          padding: 16px;
+        }
+        
+        .key-card-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+        
+        .key-card-actions {
+          width: 100%;
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        .key-card-actions .btn {
+          width: 100%;
+        }
+        
+        #keyPagination {
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        #keyPagination .btn {
+          width: 100%;
+        }
+        
+        .section-tabs {
+          overflow-x: auto;
+          flex-wrap: nowrap;
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        .tab {
+          padding: 8px 16px;
+          white-space: nowrap;
+          font-size: 14px;
+        }
+        
+        .blacklist-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+        
+        .blacklist-item .btn {
+          width: 100%;
+        }
+        
+        #keySearchInput {
+          min-width: 100% !important;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .login-container {
+          padding: 24px 16px;
+        }
+        
+        .admin-section {
+          padding: 16px 12px;
+        }
+        
+        .admin-section h2 {
+          font-size: 18px;
+        }
+        
+        .stat-value {
+          font-size: 24px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+          font-size: 16px; /* Prevents iOS zoom on focus */
+        }
+      }
     </style>
   </head>
   <body>
