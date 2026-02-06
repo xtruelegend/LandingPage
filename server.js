@@ -1177,7 +1177,20 @@ app.get("/api/reviews", async (req, res) => {
     if (reviews) {
       approvedReviews = typeof reviews === "string" ? JSON.parse(reviews) : Array.isArray(reviews) ? reviews : [];
     }
-    res.json({ reviews: approvedReviews });
+
+    // Check if there's a display list
+    let displayedReviews = [];
+    const displayed = await kvStore.get("displayed_reviews");
+    if (displayed) {
+      displayedReviews = typeof displayed === "string" ? JSON.parse(displayed) : Array.isArray(displayed) ? displayed : [];
+    }
+
+    // If display list exists, filter to only those; otherwise show all
+    let reviews_to_return = displayedReviews.length > 0
+      ? approvedReviews.filter(r => displayedReviews.includes(r.id))
+      : approvedReviews;
+
+    res.json({ reviews: reviews_to_return });
   } catch (error) {
     console.error("Get reviews error:", error);
     res.status(500).json({ error: error.message });
@@ -1395,6 +1408,53 @@ app.post("/api/admin/delete-approved-review", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Delete approved review error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Toggle review display status
+app.post("/api/admin/toggle-review-display", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+    const { reviewId } = req.body;
+    if (!reviewId) {
+      return res.status(400).json({ error: "Review ID required" });
+    }
+
+    // Get displayed reviews list (defaults to all approved if not set)
+    let displayedReviews = [];
+    const displayed = await kvStore.get("displayed_reviews");
+    if (displayed) {
+      displayedReviews = typeof displayed === "string" ? JSON.parse(displayed) : Array.isArray(displayed) ? displayed : [];
+    }
+
+    // Get all approved reviews
+    let approvedReviews = [];
+    const approved = await kvStore.get("approved_reviews");
+    if (approved) {
+      approvedReviews = typeof approved === "string" ? JSON.parse(approved) : Array.isArray(approved) ? approved : [];
+    }
+
+    // Check if review exists in approved
+    const reviewExists = approvedReviews.some(r => r.id === reviewId);
+    if (!reviewExists) {
+      return res.status(404).json({ error: "Review not found in approved reviews" });
+    }
+
+    // Toggle display status
+    const index = displayedReviews.indexOf(reviewId);
+    if (index > -1) {
+      displayedReviews.splice(index, 1); // Hide
+    } else {
+      displayedReviews.push(reviewId); // Show
+    }
+
+    await kvStore.set("displayed_reviews", JSON.stringify(displayedReviews));
+
+    res.json({ success: true, displayed: displayedReviews.includes(reviewId) });
+  } catch (error) {
+    console.error("Toggle review display error:", error);
     res.status(500).json({ error: error.message });
   }
 });

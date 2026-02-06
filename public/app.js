@@ -561,8 +561,17 @@ async function loadReviews() {
       const grid = document.getElementById('testimonialsGrid');
       if (!grid) return;
       
-      // Add real reviews to the grid (keeping default ones and adding new ones)
-      data.reviews.forEach(review => {
+      // Clear only the dynamically added reviews (keep the first 3 default cards)
+      const allCards = grid.querySelectorAll('.testimonial-card');
+      const defaultCount = 3; // Number of hardcoded default testimonials
+      for (let i = allCards.length - 1; i >= defaultCount; i--) {
+        allCards[i].remove();
+      }
+      
+      // Add real reviews to the grid (limit to 6 total)
+      const limit = Math.min(data.reviews.length, 6);
+      for (let i = 0; i < limit; i++) {
+        const review = data.reviews[i];
         const avatars = ['👨', '👩', '🧑', '👴', '👵'];
         const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
         const stars = '⭐'.repeat(review.rating);
@@ -581,7 +590,7 @@ async function loadReviews() {
           </div>
         `;
         grid.appendChild(card);
-      });
+      }
     }
   } catch (error) {
     console.error('Error loading reviews:', error);

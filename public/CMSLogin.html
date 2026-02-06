@@ -197,7 +197,8 @@
 
       <div class="admin-section">
         <h2>✅ Approved Reviews</h2>
-        <p style="color: #666; margin-bottom: 20px;">Edit, unpublish, or delete live reviews.</p>
+        <p style="color: #666; margin-bottom: 12px;">Edit, unpublish, or delete live reviews. Toggle which ones display on the website (limit 6).</p>
+        <button class="btn btn-primary" onclick="loadApprovedReviews()" style="margin-bottom: 12px;">Refresh Reviews</button>
         <div id="approvedReviewsContainer"></div>
       </div>
 
@@ -438,6 +439,7 @@
               </div>
               <div class="review-actions">
                 <button class="btn btn-primary" onclick="editReview('${review.id}', 'approved')">✎ Edit</button>
+                <button class="btn btn-approve" onclick="toggleReviewDisplay('${review.id}')">👁 Toggle Display</button>
                 <button class="btn btn-approve" onclick="unpublishReview('${review.id}')">↩ Unpublish</button>
                 <button class="btn btn-delete" onclick="deleteApprovedReview('${review.id}')">✗ Delete</button>
               </div>
@@ -762,6 +764,26 @@
       // If there's a stored token, try to verify it
       if (authToken) {
         checkAuth();
+      }
+      
+      async function toggleReviewDisplay(reviewId) {
+        try {
+          const response = await fetch('/api/admin/toggle-review-display', {
+            method: 'POST',
+            headers: adminHeaders(),
+            body: JSON.stringify({ reviewId })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            loadApprovedReviews();
+          } else {
+            alert('Error toggling review display');
+          }
+        } catch (error) {
+          alert('Error toggling review display');
+          console.error('Toggle display error:', error);
+        }
       }
       
       setInterval(() => {
