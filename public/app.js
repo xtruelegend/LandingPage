@@ -22,7 +22,7 @@ const APPS = [
   {
     id: 2,
     name: "AgendaXT",
-    desc: "Smart daily planning with focus blocks, reminders, and clean schedules (Windows PC)",
+    desc: "Coming soon. More details when it's ready. (Windows PC)",
     price: "19.99",
     icon: "🗓️",
     status: "coming-soon",
@@ -32,7 +32,7 @@ const APPS = [
   {
     id: 3,
     name: "InventoryXT",
-    desc: "Simple inventory tracking with low-stock alerts and quick exports (Windows PC)",
+    desc: "Coming soon. More details when it's ready. (Windows PC)",
     price: "29.99",
     icon: "📦",
     status: "coming-soon",
@@ -42,7 +42,7 @@ const APPS = [
   {
     id: 4,
     name: "FileSorterXT",
-    desc: "Organize files automatically with rules, tags, and smart cleanup (Windows PC)",
+    desc: "Coming soon. More details when it's ready. (Windows PC)",
     price: "14.99",
     icon: "🗂️",
     status: "coming-soon",
@@ -52,7 +52,7 @@ const APPS = [
   {
     id: 5,
     name: "BookedXT",
-    desc: "Client booking, calendar sync, and payments in one place (Windows PC)",
+    desc: "Coming soon. More details when it's ready. (Windows PC)",
     price: "24.99",
     icon: "📅",
     status: "coming-soon",
@@ -62,7 +62,7 @@ const APPS = [
   {
     id: 6,
     name: "PanicXT",
-    desc: "Instant emergency checklists and one-tap safety actions (Windows PC)",
+    desc: "Coming soon. More details when it's ready. (Windows PC)",
     price: "11.99",
     icon: "🚨",
     status: "coming-soon",
@@ -72,7 +72,7 @@ const APPS = [
   {
     id: 7,
     name: "RoccoXT",
-    desc: "Personalized productivity assistant with quick actions and shortcuts (Windows PC)",
+    desc: "Coming soon. More details when it's ready. (Windows PC)",
     price: "17.99",
     icon: "🤖",
     status: "coming-soon",
