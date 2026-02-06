@@ -846,6 +846,7 @@
               <div style="margin-top:6px; font-family: monospace;">${item.licenseKey}</div>
               <div style="margin-top:6px; color:#666; font-size:12px;">${item.date || ''}</div>
               <div class="review-actions">
+                <button class="btn btn-warning" onclick="replaceKey('${item.email}','${item.licenseKey}','${item.product}')">🔄 Replace Key</button>
                 <button class="btn btn-delete" onclick="deactivateKey('${item.email}','${item.licenseKey}','${item.product}')">🚫 Deactivate Key</button>
               </div>
             </div>
@@ -873,6 +874,30 @@
           }
         } catch (err) {
           resultDiv.innerHTML = '<div class="error-message">✗ Failed to send report</div>';
+        }
+      }
+
+      async function replaceKey(email, oldKey, appName) {
+        if (!confirm(`Replace this key with a new one and email it to ${email}?`)) return;
+        const resultDiv = document.getElementById('activeKeysResult');
+        resultDiv.innerHTML = '<p>Replacing key...</p>';
+
+        try {
+          const response = await fetch('/api/admin/replace-key', {
+            method: 'POST',
+            headers: adminHeaders(),
+            body: JSON.stringify({ email, oldKey, appName })
+          });
+          const data = await response.json();
+
+          if (response.ok) {
+            resultDiv.innerHTML = `<div class="success-message">✓ Key replaced and emailed: ${data.newKey}</div>`;
+            loadActiveKeys();
+          } else {
+            resultDiv.innerHTML = `<div class="error-message">✗ ${data.error || 'Failed to replace key'}</div>`;
+          }
+        } catch (err) {
+          resultDiv.innerHTML = '<div class="error-message">✗ Failed to replace key</div>';
         }
       }
 

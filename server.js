@@ -1651,6 +1651,69 @@ app.post("/api/admin/send-key-report", async (req, res) => {
 });
 
 // Admin: Deactivate key and issue new one
+app.post("/api/admin/replace-key", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    const { email, oldKey, appName } = req.body;
+    if (!email || !oldKey || !appName) {
+      return res.status(400).json({ error: "Email, oldKey, and appName required" });
+    }
+
+    // Get new key
+    const newKey = await getPooledLicenseKey();
+    if (!newKey) {
+      return res.status(500).json({ error: "No license keys available" });
+    }
+
+    // Mark old key as deactivated
+    const deactivatedRaw = await kvStore.get("deactivated_keys");
+    const deactivated = deactivatedRaw ? JSON.parse(deactivatedRaw) : [];
+    if (!deactivated.includes(oldKey.toUpperCase())) {
+      deactivated.push(oldKey.toUpperCase());
+      await kvStore.set("deactivated_keys", JSON.stringify(deactivated));
+    }
+
+    // Update purchase record with new key
+    const redis = await getRedisClient();
+    if (redis) {
+      const purchaseKey = `purchases:${email.toLowerCase().trim()}`;
+      const raw = await redis.get(purchaseKey);
+      if (raw) {
+        const list = JSON.parse(raw);
+        const updatedList = list.map((p) => {
+          if (String(p.licenseKey).toUpperCase() === String(oldKey).toUpperCase()) {
+            return {
+              ...p,
+              licenseKey: newKey,
+              date: new Date().toISOString()
+            };
+          }
+          return p;
+        });
+        await redis.set(purchaseKey, JSON.stringify(updatedList));
+      }
+    }
+
+    // Email the new key
+    const emailResult = await sendKeyEmail(email.trim(), newKey, appName);
+    
+    if (emailResult?.skipped) {
+      return res.json({ 
+        success: true, 
+        newKey,
+        warning: "Key replaced but email not sent (SMTP not configured)" 
+      });
+    }
+
+    res.json({ success: true, newKey, message: `New key emailed to ${email}` });
+  } catch (error) {
+    console.error("Replace key error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post("/api/admin/deactivate-key", async (req, res) => {
   try {
     const authorized = await requireAdmin(req, res);
