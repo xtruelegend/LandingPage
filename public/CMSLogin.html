@@ -758,14 +758,6 @@
         }
       }
 
-      // On page load, show login by default
-      showLogin();
-      
-      // If there's a stored token, try to verify it
-      if (authToken) {
-        checkAuth();
-      }
-      
       async function toggleReviewDisplay(reviewId) {
         try {
           const response = await fetch('/api/admin/toggle-review-display', {
@@ -777,13 +769,23 @@
           if (response.ok) {
             const data = await response.json();
             loadApprovedReviews();
+            alert(data.displayed ? '✓ Review now displayed on website' : '✓ Review hidden from website');
           } else {
-            alert('Error toggling review display');
+            const data = await response.json();
+            alert('Error: ' + (data.error || 'Failed to toggle review display'));
           }
         } catch (error) {
           alert('Error toggling review display');
           console.error('Toggle display error:', error);
         }
+      }
+
+      // On page load, show login by default
+      showLogin();
+      
+      // If there's a stored token, try to verify it
+      if (authToken) {
+        checkAuth();
       }
       
       setInterval(() => {

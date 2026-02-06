@@ -1422,6 +1422,8 @@ app.post("/api/admin/toggle-review-display", async (req, res) => {
       return res.status(400).json({ error: "Review ID required" });
     }
 
+    console.log(`Toggling display for review: ${reviewId}`);
+
     // Get displayed reviews list (defaults to all approved if not set)
     let displayedReviews = [];
     const displayed = await kvStore.get("displayed_reviews");
@@ -1436,6 +1438,9 @@ app.post("/api/admin/toggle-review-display", async (req, res) => {
       approvedReviews = typeof approved === "string" ? JSON.parse(approved) : Array.isArray(approved) ? approved : [];
     }
 
+    console.log(`Approved reviews: ${JSON.stringify(approvedReviews.map(r => r.id))}`);
+    console.log(`Currently displayed: ${JSON.stringify(displayedReviews)}`);
+
     // Check if review exists in approved
     const reviewExists = approvedReviews.some(r => r.id === reviewId);
     if (!reviewExists) {
@@ -1446,11 +1451,14 @@ app.post("/api/admin/toggle-review-display", async (req, res) => {
     const index = displayedReviews.indexOf(reviewId);
     if (index > -1) {
       displayedReviews.splice(index, 1); // Hide
+      console.log(`Hidden review: ${reviewId}`);
     } else {
       displayedReviews.push(reviewId); // Show
+      console.log(`Displayed review: ${reviewId}`);
     }
 
     await kvStore.set("displayed_reviews", JSON.stringify(displayedReviews));
+    console.log(`Updated displayed reviews: ${JSON.stringify(displayedReviews)}`);
 
     res.json({ success: true, displayed: displayedReviews.includes(reviewId) });
   } catch (error) {
