@@ -610,6 +610,49 @@ app.post("/api/resend-key", async (req, res) => {
       return res.status(400).json({ error: "App name is required" });
     }
 
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const normalizedKey = String(licenseKey).toUpperCase().trim();
+
+    const resolveProductName = async () => {
+      if (appName && appName !== "Unknown") return appName;
+
+      try {
+        const purchasesRaw = await kvStore.get(`purchases:${normalizedEmail}`);
+        const purchases = purchasesRaw
+          ? (typeof purchasesRaw === "string" ? JSON.parse(purchasesRaw) : purchasesRaw)
+          : [];
+
+        if (Array.isArray(purchases)) {
+          const match = purchases.find(p =>
+            String(p.licenseKey || "").toUpperCase() === normalizedKey
+          );
+          if (match?.product && match.product !== "Unknown") {
+            return match.product;
+          }
+        }
+      } catch (err) {
+        console.error("Resend product lookup error:", err.message);
+      }
+
+      try {
+        if (fs.existsSync(KEYS_FILE)) {
+          const raw = JSON.parse(fs.readFileSync(KEYS_FILE, "utf8"));
+          const records = Array.isArray(raw) ? raw : [];
+          const match = records.find(record =>
+            String(record.licenseKey || "").toUpperCase() === normalizedKey &&
+            String(record.email || "").toLowerCase().trim() === normalizedEmail
+          );
+          if (match?.product && match.product !== "Unknown") {
+            return match.product;
+          }
+        }
+      } catch (err) {
+        console.error("Resend local product lookup error:", err.message);
+      }
+
+      return "BudgetXT";
+    };
+
     // Validate the license key exists in pool
     const payload = await (async () => {
       if (KEYS_LOCAL_PATH && fs.existsSync(KEYS_LOCAL_PATH)) {
@@ -647,8 +690,10 @@ app.post("/api/resend-key", async (req, res) => {
       return res.status(400).json({ error: "License key not found in valid keys pool" });
     }
 
+    const resolvedAppName = await resolveProductName();
+
     // Send the email
-    const emailResult = await sendKeyEmail(email, licenseKey, appName);
+    const emailResult = await sendKeyEmail(email, licenseKey, resolvedAppName);
 
     if (emailResult?.skipped) {
       return res.status(500).json({ 
@@ -661,7 +706,7 @@ app.post("/api/resend-key", async (req, res) => {
       success: true,
       message: "License key email resent successfully",
       email,
-      appName,
+      appName: resolvedAppName,
       messageId: emailResult?.messageId
     });
   } catch (error) {
