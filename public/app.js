@@ -12,7 +12,7 @@ const APPS = [
   {
     id: 1,
     name: "BudgetXT",
-    desc: "BudgetXT is my simple, no-drama budgeting app for Windows. Add income, log expenses, and it shows you what's left for the month, clean and easy. No subscriptions, no accounts, no cloud stuff. Your data stays on your PC. Great for freelancers and regular people who just want a clear picture without the extra noise. (For Windows PC) - Early Version",
+    desc: "BudgetXT is a simple, no-drama budgeting app for Windows. Add income, log expenses, and it shows you what's left for the month, clean and easy. No subscriptions, no accounts, no cloud stuff. Your data stays on your PC. Great for freelancers and daily users who just want a clear picture of tracking their budget and finances. (For Windows PC) - Early Version",
     price: "14.99",
     icon: "💰",
     status: "available",
@@ -22,7 +22,7 @@ const APPS = [
   {
     id: 2,
     name: "AgendaXT",
-    desc: "Coming soon. More details when it's ready. (Windows PC)",
+    desc: "coming soon to Windows OS",
     price: "19.99",
     icon: "🗓️",
     status: "coming-soon",
@@ -32,7 +32,7 @@ const APPS = [
   {
     id: 3,
     name: "InventoryXT",
-    desc: "Coming soon. More details when it's ready. (Windows PC)",
+    desc: "coming soon to Windows OS",
     price: "29.99",
     icon: "📦",
     status: "coming-soon",
@@ -42,7 +42,7 @@ const APPS = [
   {
     id: 4,
     name: "FileSorterXT",
-    desc: "Coming soon. More details when it's ready. (Windows PC)",
+    desc: "coming soon to Windows OS",
     price: "14.99",
     icon: "🗂️",
     status: "coming-soon",
@@ -52,7 +52,7 @@ const APPS = [
   {
     id: 5,
     name: "BookedXT",
-    desc: "Coming soon. More details when it's ready. (Windows PC)",
+    desc: "coming soon to Windows OS",
     price: "24.99",
     icon: "📅",
     status: "coming-soon",
@@ -62,7 +62,7 @@ const APPS = [
   {
     id: 6,
     name: "PanicXT",
-    desc: "Coming soon. More details when it's ready. (Windows PC)",
+    desc: "coming soon to iOS & iPadOS",
     price: "11.99",
     icon: "🚨",
     status: "coming-soon",
@@ -72,7 +72,7 @@ const APPS = [
   {
     id: 7,
     name: "RoccoXT",
-    desc: "Coming soon. More details when it's ready. (Windows PC)",
+    desc: "coming soon to Windows OS",
     price: "17.99",
     icon: "🤖",
     status: "coming-soon",
