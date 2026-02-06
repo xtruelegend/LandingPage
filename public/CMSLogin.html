@@ -372,12 +372,26 @@
       <div class="admin-section">
         <h2>🔑 Active Keys</h2>
         <p style="color: #666; margin-bottom: 12px;">View active keys and email yourself a report. Deactivate invalid keys - then use "Send License Key Manually" to issue replacements.</p>
-        <div style="display:flex; gap:12px; margin-bottom: 12px;">
-          <button class="btn btn-primary" onclick="loadActiveKeys()">Refresh List</button>
-          <button class="btn btn-primary" onclick="sendKeyReport()">Email Me Active Keys</button>
+        
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+          <input type="text" id="keySearchInput" placeholder="🔍 Search by email, product, or key..." style="flex: 1; min-width: 250px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px;" onkeyup="filterKeys()">
+          <button class="btn btn-primary" onclick="loadActiveKeys()">🔄 Refresh</button>
+          <button class="btn btn-primary" onclick="sendKeyReport()">📧 Email Report</button>
         </div>
+        
+        <div id="keyStats" style="display: flex; gap: 12px; margin-bottom: 16px; font-size: 14px; color: #666;">
+          <span id="totalKeys">Total: 0</span>
+          <span id="filteredKeys" style="display: none;">Showing: 0</span>
+        </div>
+        
         <div id="activeKeysResult"></div>
         <div id="activeKeysContainer"></div>
+        
+        <div id="keyPagination" style="display: flex; justify-content: center; gap: 12px; margin-top: 16px; display: none;">
+          <button class="btn btn-primary" onclick="loadKeyPage('prev')">← Previous</button>
+          <span id="pageInfo" style="display: flex; align-items: center; padding: 0 16px; color: #666; font-weight: 600;"></span>
+          <button class="btn btn-primary" onclick="loadKeyPage('next')">Next →</button>
+        </div>
       </div>
 
       <!-- Review Moderation -->
@@ -820,6 +834,10 @@
         }
       }
 
+      let allKeys = [];
+      let currentPage = 1;
+      const keysPerPage = 10;
+
       async function loadActiveKeys() {
         const container = document.getElementById('activeKeysContainer');
         container.innerHTML = '<p>Loading active keys...</p>';
@@ -835,25 +853,96 @@
             return;
           }
 
-          if (!data.items.length) {
+          allKeys = data.items || [];
+          document.getElementById('totalKeys').textContent = `Total: ${allKeys.length}`;
+          
+          if (!allKeys.length) {
             container.innerHTML = '<div class="empty-state"><h3>No active keys</h3></div>';
+            document.getElementById('keyPagination').style.display = 'none';
             return;
           }
 
-          container.innerHTML = data.items.map((item) => `
-            <div class="review-item">
-              <div><strong>${item.email}</strong> — ${item.product}</div>
-              <div style="margin-top:6px; font-family: monospace;">${item.licenseKey}</div>
-              <div style="margin-top:6px; color:#666; font-size:12px;">${item.date || ''}</div>
-              <div class="review-actions">
-                <button class="btn btn-warning" onclick="replaceKey('${item.email}','${item.licenseKey}','${item.product}')">🔄 Replace Key</button>
-                <button class="btn btn-delete" onclick="deactivateKey('${item.email}','${item.licenseKey}','${item.product}')">🚫 Deactivate Key</button>
-              </div>
-            </div>
-          `).join('');
+          currentPage = 1;
+          document.getElementById('keySearchInput').value = '';
+          renderKeys();
         } catch (err) {
           container.innerHTML = '<div class="error-message">✗ Failed to load keys</div>';
         }
+      }
+
+      function filterKeys() {
+        const searchTerm = document.getElementById('keySearchInput').value.toLowerCase();
+        const filteredKeysSpan = document.getElementById('filteredKeys');
+        
+        if (searchTerm) {
+          const filtered = allKeys.filter(item => 
+            item.email.toLowerCase().includes(searchTerm) ||
+            item.product.toLowerCase().includes(searchTerm) ||
+            item.licenseKey.toLowerCase().includes(searchTerm)
+          );
+          filteredKeysSpan.textContent = `Showing: ${filtered.length}`;
+          filteredKeysSpan.style.display = 'inline';
+          renderKeys(filtered);
+        } else {
+          filteredKeysSpan.style.display = 'none';
+          renderKeys();
+        }
+      }
+
+      function renderKeys(keysToRender = null) {
+        const container = document.getElementById('activeKeysContainer');
+        const keys = keysToRender || allKeys;
+        
+        if (!keys.length) {
+          container.innerHTML = '<div class="empty-state"><p>No keys match your search</p></div>';
+          document.getElementById('keyPagination').style.display = 'none';
+          return;
+        }
+
+        const totalPages = Math.ceil(keys.length / keysPerPage);
+        const startIdx = (currentPage - 1) * keysPerPage;
+        const endIdx = startIdx + keysPerPage;
+        const pageKeys = keys.slice(startIdx, endIdx);
+
+        container.innerHTML = pageKeys.map((item) => `
+          <div class="review-item" data-email="${item.email}" data-product="${item.product}" data-key="${item.licenseKey}">
+            <div><strong>${item.email}</strong> — ${item.product}</div>
+            <div style="margin-top:6px; font-family: monospace;">${item.licenseKey}</div>
+            <div style="margin-top:6px; color:#666; font-size:12px;">${item.date || ''}</div>
+            <div class="review-actions">
+              <button class="btn btn-warning" onclick="replaceKey('${item.email}','${item.licenseKey}','${item.product}')">🔄 Replace Key</button>
+              <button class="btn btn-delete" onclick="deactivateKey('${item.email}','${item.licenseKey}','${item.product}')">🚫 Deactivate Key</button>
+            </div>
+          </div>
+        `).join('');
+
+        // Update pagination
+        if (totalPages > 1) {
+          document.getElementById('keyPagination').style.display = 'flex';
+          document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+        } else {
+          document.getElementById('keyPagination').style.display = 'none';
+        }
+      }
+
+      function loadKeyPage(direction) {
+        const searchTerm = document.getElementById('keySearchInput').value.toLowerCase();
+        const keys = searchTerm ? allKeys.filter(item => 
+          item.email.toLowerCase().includes(searchTerm) ||
+          item.product.toLowerCase().includes(searchTerm) ||
+          item.licenseKey.toLowerCase().includes(searchTerm)
+        ) : allKeys;
+        
+        const totalPages = Math.ceil(keys.length / keysPerPage);
+        
+        if (direction === 'prev' && currentPage > 1) {
+          currentPage--;
+        } else if (direction === 'next' && currentPage < totalPages) {
+          currentPage++;
+        }
+        
+        renderKeys(searchTerm ? keys : null);
+        document.getElementById('activeKeysContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
       async function sendKeyReport() {
