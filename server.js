@@ -624,6 +624,16 @@ app.post("/api/verify-key", async (req, res) => {
 
     const normalizedKey = key.toUpperCase();
 
+    try {
+      const deactivatedRaw = await kvStore.get("deactivated_keys");
+      const deactivated = deactivatedRaw ? JSON.parse(deactivatedRaw) : [];
+      if (deactivated.includes(normalizedKey)) {
+        return res.status(401).json({ valid: false, error: "License key deactivated" });
+      }
+    } catch (err) {
+      console.error("Deactivated key check error:", err.message);
+    }
+
     const localMatchesKey = () => {
       try {
         if (!fs.existsSync(KEYS_FILE)) return null;
@@ -956,6 +966,7 @@ app.get("/api/health", (req, res) => {
 
 // Simple admin authentication (stateless signed token)
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "changeme123";
+const ADMIN_REPORT_EMAIL = process.env.ADMIN_REPORT_EMAIL || "";
 
 function createAdminToken() {
   const payload = `${Date.now()}`;
@@ -1339,6 +1350,170 @@ app.post("/api/admin/delete-approved-review", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Delete approved review error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Get active keys list
+app.get("/api/admin/active-keys", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    const redis = await getRedisClient();
+    if (!redis) {
+      return res.status(500).json({ error: "Redis connection failed" });
+    }
+
+    const purchaseKeys = await redis.keys("purchases:*");
+    const items = [];
+    for (const key of purchaseKeys) {
+      const raw = await redis.get(key);
+      const list = raw ? JSON.parse(raw) : [];
+      const email = key.replace("purchases:", "");
+      list.forEach((p) => {
+        items.push({
+          email,
+          product: p.product || "Unknown",
+          licenseKey: p.licenseKey,
+          date: p.date || p.createdAt || null,
+          orderId: p.orderId || null
+        });
+      });
+    }
+
+    res.json({ items });
+  } catch (error) {
+    console.error("Active keys error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Email active keys report
+app.post("/api/admin/send-key-report", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    if (!ADMIN_REPORT_EMAIL) {
+      return res.status(400).json({ error: "ADMIN_REPORT_EMAIL not set" });
+    }
+
+    const redis = await getRedisClient();
+    if (!redis) {
+      return res.status(500).json({ error: "Redis connection failed" });
+    }
+
+    const purchaseKeys = await redis.keys("purchases:*");
+    const rows = [];
+    for (const key of purchaseKeys) {
+      const raw = await redis.get(key);
+      const list = raw ? JSON.parse(raw) : [];
+      const email = key.replace("purchases:", "");
+      list.forEach((p) => {
+        rows.push({
+          email,
+          product: p.product || "Unknown",
+          licenseKey: p.licenseKey,
+          date: p.date || p.createdAt || ""
+        });
+      });
+    }
+
+    const textBody = rows
+      .map((r) => `${r.email} | ${r.product} | ${r.licenseKey} | ${r.date}`)
+      .join("\n");
+
+    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !SMTP_FROM) {
+      return res.status(500).json({ error: "SMTP not configured" });
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS }
+    });
+
+    await transporter.sendMail({
+      from: SMTP_FROM,
+      to: ADMIN_REPORT_EMAIL,
+      subject: "Active License Keys Report",
+      text: textBody || "No active keys found."
+    });
+
+    res.json({ success: true, count: rows.length });
+  } catch (error) {
+    console.error("Send key report error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Deactivate key and issue new one
+app.post("/api/admin/deactivate-key", async (req, res) => {
+  try {
+    const authorized = await requireAdmin(req, res);
+    if (!authorized) return;
+
+    const { email, oldKey, appName } = req.body;
+    if (!email || !oldKey || !appName) {
+      return res.status(400).json({ error: "Email, oldKey, and appName required" });
+    }
+
+    const newKey = await getPooledLicenseKey();
+    if (!newKey) {
+      return res.status(500).json({ error: "No license keys available" });
+    }
+
+    // Mark old key as deactivated
+    const deactivatedRaw = await kvStore.get("deactivated_keys");
+    const deactivated = deactivatedRaw ? JSON.parse(deactivatedRaw) : [];
+    if (!deactivated.includes(oldKey.toUpperCase())) {
+      deactivated.push(oldKey.toUpperCase());
+      await kvStore.set("deactivated_keys", JSON.stringify(deactivated));
+    }
+
+    // Update purchase record
+    const redis = await getRedisClient();
+    if (!redis) {
+      return res.status(500).json({ error: "Redis connection failed" });
+    }
+
+    const purchaseKey = `purchases:${email.toLowerCase().trim()}`;
+    const raw = await redis.get(purchaseKey);
+    const list = raw ? JSON.parse(raw) : [];
+    let updated = false;
+
+    const updatedList = list.map((p) => {
+      if (String(p.licenseKey).toUpperCase() === String(oldKey).toUpperCase()) {
+        updated = true;
+        return {
+          ...p,
+          licenseKey: newKey,
+          date: new Date().toISOString()
+        };
+      }
+      return p;
+    });
+
+    if (!updated) {
+      updatedList.push({
+        email,
+        licenseKey: newKey,
+        product: appName,
+        orderId: `MANUAL-REISSUE-${Date.now()}`,
+        date: new Date().toISOString()
+      });
+    }
+
+    await redis.set(purchaseKey, JSON.stringify(updatedList));
+
+    // Send updated key to customer
+    await sendKeyEmail(email, newKey, appName);
+
+    res.json({ success: true, newKey });
+  } catch (error) {
+    console.error("Deactivate key error:", error);
     res.status(500).json({ error: error.message });
   }
 });

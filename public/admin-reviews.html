@@ -176,6 +176,18 @@
         <div id="sendKeyResult"></div>
       </div>
 
+      <!-- Active Keys -->
+      <div class="admin-section">
+        <h2>🔑 Active Keys</h2>
+        <p style="color: #666; margin-bottom: 12px;">View active keys, email yourself a report, or deactivate and reissue.</p>
+        <div style="display:flex; gap:12px; margin-bottom: 12px;">
+          <button class="btn btn-primary" onclick="loadActiveKeys()">Refresh List</button>
+          <button class="btn btn-primary" onclick="sendKeyReport()">Email Me Active Keys</button>
+        </div>
+        <div id="activeKeysResult"></div>
+        <div id="activeKeysContainer"></div>
+      </div>
+
       <!-- Review Moderation -->
       <div class="admin-section">
         <h2>⭐ Pending Reviews</h2>
@@ -577,6 +589,86 @@
           }
         } catch (error) {
           resultDiv.innerHTML = '<div class="error-message">✗ Failed to rotate keys</div>';
+        }
+      }
+
+      async function loadActiveKeys() {
+        const container = document.getElementById('activeKeysContainer');
+        container.innerHTML = '<p>Loading active keys...</p>';
+
+        try {
+          const response = await fetch('/api/admin/active-keys', {
+            headers: adminHeaders()
+          });
+          const data = await response.json();
+
+          if (!response.ok) {
+            container.innerHTML = `<div class="error-message">✗ ${data.error || 'Failed to load keys'}</div>`;
+            return;
+          }
+
+          if (!data.items.length) {
+            container.innerHTML = '<div class="empty-state"><h3>No active keys</h3></div>';
+            return;
+          }
+
+          container.innerHTML = data.items.map((item) => `
+            <div class="review-item">
+              <div><strong>${item.email}</strong> — ${item.product}</div>
+              <div style="margin-top:6px; font-family: monospace;">${item.licenseKey}</div>
+              <div style="margin-top:6px; color:#666; font-size:12px;">${item.date || ''}</div>
+              <div class="review-actions">
+                <button class="btn btn-delete" onclick="deactivateKey('${item.email}','${item.licenseKey}','${item.product}')">Deactivate & Reissue</button>
+              </div>
+            </div>
+          `).join('');
+        } catch (err) {
+          container.innerHTML = '<div class="error-message">✗ Failed to load keys</div>';
+        }
+      }
+
+      async function sendKeyReport() {
+        const resultDiv = document.getElementById('activeKeysResult');
+        resultDiv.innerHTML = '<p>Sending report...</p>';
+
+        try {
+          const response = await fetch('/api/admin/send-key-report', {
+            method: 'POST',
+            headers: adminHeaders()
+          });
+          const data = await response.json();
+
+          if (response.ok) {
+            resultDiv.innerHTML = `<div class="success-message">✓ Report sent (${data.count} keys)</div>`;
+          } else {
+            resultDiv.innerHTML = `<div class="error-message">✗ ${data.error || 'Failed to send report'}</div>`;
+          }
+        } catch (err) {
+          resultDiv.innerHTML = '<div class="error-message">✗ Failed to send report</div>';
+        }
+      }
+
+      async function deactivateKey(email, oldKey, appName) {
+        if (!confirm('Deactivate this key and issue a new one?')) return;
+        const resultDiv = document.getElementById('activeKeysResult');
+        resultDiv.innerHTML = '<p>Reissuing key...</p>';
+
+        try {
+          const response = await fetch('/api/admin/deactivate-key', {
+            method: 'POST',
+            headers: adminHeaders(),
+            body: JSON.stringify({ email, oldKey, appName })
+          });
+          const data = await response.json();
+
+          if (response.ok) {
+            resultDiv.innerHTML = `<div class="success-message">✓ New key sent: ${data.newKey}</div>`;
+            loadActiveKeys();
+          } else {
+            resultDiv.innerHTML = `<div class="error-message">✗ ${data.error || 'Failed to reissue key'}</div>`;
+          }
+        } catch (err) {
+          resultDiv.innerHTML = '<div class="error-message">✗ Failed to reissue key</div>';
         }
       }
       
