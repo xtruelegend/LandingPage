@@ -179,7 +179,7 @@
       <!-- Active Keys -->
       <div class="admin-section">
         <h2>🔑 Active Keys</h2>
-        <p style="color: #666; margin-bottom: 12px;">View active keys, email yourself a report, or deactivate and reissue (manual send).</p>
+        <p style="color: #666; margin-bottom: 12px;">View active keys and email yourself a report. Deactivate invalid keys - then use "Send License Key Manually" to issue replacements.</p>
         <div style="display:flex; gap:12px; margin-bottom: 12px;">
           <button class="btn btn-primary" onclick="loadActiveKeys()">Refresh List</button>
           <button class="btn btn-primary" onclick="sendKeyReport()">Email Me Active Keys</button>
@@ -653,7 +653,7 @@
               <div style="margin-top:6px; font-family: monospace;">${item.licenseKey}</div>
               <div style="margin-top:6px; color:#666; font-size:12px;">${item.date || ''}</div>
               <div class="review-actions">
-                <button class="btn btn-delete" onclick="deactivateKey('${item.email}','${item.licenseKey}','${item.product}')">Deactivate & Reissue</button>
+                <button class="btn btn-delete" onclick="deactivateKey('${item.email}','${item.licenseKey}','${item.product}')">🚫 Deactivate Key</button>
               </div>
             </div>
           `).join('');
@@ -684,9 +684,9 @@
       }
 
       async function deactivateKey(email, oldKey, appName) {
-        if (!confirm('Deactivate this key and issue a new one?')) return;
+        if (!confirm('Deactivate this key? You will need to manually send a new one.')) return;
         const resultDiv = document.getElementById('activeKeysResult');
-        resultDiv.innerHTML = '<p>Reissuing key...</p>';
+        resultDiv.innerHTML = '<p>Deactivating key...</p>';
 
         try {
           const response = await fetch('/api/admin/deactivate-key', {
@@ -697,13 +697,13 @@
           const data = await response.json();
 
           if (response.ok) {
-            resultDiv.innerHTML = `<div class="success-message">✓ New key created (not emailed): ${data.newKey}</div>`;
+            resultDiv.innerHTML = `<div class="success-message">✓ Key deactivated. Use "Send License Key Manually" to issue a new one.</div>`;
             loadActiveKeys();
           } else {
-            resultDiv.innerHTML = `<div class="error-message">✗ ${data.error || 'Failed to reissue key'}</div>`;
+            resultDiv.innerHTML = `<div class="error-message">✗ ${data.error || 'Failed to deactivate key'}</div>`;
           }
         } catch (err) {
-          resultDiv.innerHTML = '<div class="error-message">✗ Failed to reissue key</div>';
+          resultDiv.innerHTML = '<div class="error-message">✗ Failed to deactivate key</div>';
         }
       }
       
@@ -804,13 +804,22 @@
         }
       }
 
-      // On page load, show login by default
-      showLogin();
-      
-      // If there's a stored token, try to verify it
-      if (authToken) {
-        checkAuth();
-      }
+      // On page load
+      (async function init() {
+        // If there's a stored token, verify it's still valid
+        if (authToken) {
+          const isValid = await checkAuth();
+          if (!isValid) {
+            // Token is invalid, clear it and show login
+            localStorage.removeItem('adminToken');
+            authToken = null;
+            showLogin();
+          }
+        } else {
+          // No token, show login
+          showLogin();
+        }
+      })();
       
       setInterval(() => {
         if (authToken) {

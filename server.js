@@ -1648,13 +1648,8 @@ app.post("/api/admin/deactivate-key", async (req, res) => {
     if (!authorized) return;
 
     const { email, oldKey, appName } = req.body;
-    if (!email || !oldKey || !appName) {
-      return res.status(400).json({ error: "Email, oldKey, and appName required" });
-    }
-
-    const newKey = await getPooledLicenseKey();
-    if (!newKey) {
-      return res.status(500).json({ error: "No license keys available" });
+    if (!email || !oldKey) {
+      return res.status(400).json({ error: "Email and oldKey required" });
     }
 
     // Mark old key as deactivated
@@ -1665,43 +1660,21 @@ app.post("/api/admin/deactivate-key", async (req, res) => {
       await kvStore.set("deactivated_keys", JSON.stringify(deactivated));
     }
 
-    // Update purchase record
+    // Remove key from purchase record
     const redis = await getRedisClient();
-    if (!redis) {
-      return res.status(500).json({ error: "Redis connection failed" });
-    }
-
-    const purchaseKey = `purchases:${email.toLowerCase().trim()}`;
-    const raw = await redis.get(purchaseKey);
-    const list = raw ? JSON.parse(raw) : [];
-    let updated = false;
-
-    const updatedList = list.map((p) => {
-      if (String(p.licenseKey).toUpperCase() === String(oldKey).toUpperCase()) {
-        updated = true;
-        return {
-          ...p,
-          licenseKey: newKey,
-          date: new Date().toISOString()
-        };
+    if (redis) {
+      const purchaseKey = `purchases:${email.toLowerCase().trim()}`;
+      const raw = await redis.get(purchaseKey);
+      if (raw) {
+        const list = raw ? JSON.parse(raw) : [];
+        const updatedList = list.filter((p) => 
+          String(p.licenseKey).toUpperCase() !== String(oldKey).toUpperCase()
+        );
+        await redis.set(purchaseKey, JSON.stringify(updatedList));
       }
-      return p;
-    });
-
-    if (!updated) {
-      updatedList.push({
-        email,
-        licenseKey: newKey,
-        product: appName,
-        orderId: `MANUAL-REISSUE-${Date.now()}`,
-        date: new Date().toISOString()
-      });
     }
 
-    await redis.set(purchaseKey, JSON.stringify(updatedList));
-
-    // Do NOT email automatically; admin will send manually
-    res.json({ success: true, newKey });
+    res.json({ success: true, message: "Key deactivated. Use 'Send License Key Manually' to issue a new one." });
   } catch (error) {
     console.error("Deactivate key error:", error);
     res.status(500).json({ error: error.message });
