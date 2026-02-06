@@ -483,10 +483,19 @@ function initCursorTrail() {
     mouseY = event.clientY;
   });
 
+  function interpolateColor(color1, color2, t) {
+    // t is 0-1, returns interpolated RGB
+    return {
+      r: Math.round(color1.r + (color2.r - color1.r) * t),
+      g: Math.round(color1.g + (color2.g - color1.g) * t),
+      b: Math.round(color1.b + (color2.b - color1.b) * t)
+    };
+  }
+
   function animate() {
     let x = mouseX;
     let y = mouseY;
-    hue = (hue + 0.5) % 360;
+    hue = (hue + 0.2) % 360;
 
     const rainbowColors = [
       { r: 255, g: 0, b: 0 },       // Red
@@ -511,18 +520,24 @@ function initCursorTrail() {
         dot.el.style.background = 'radial-gradient(circle, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.3))';
         dot.el.style.boxShadow = '0 0 12px rgba(0, 0, 0, 0.8)';
       } else if (colorMode === 1) {
-        // Rainbow dots - each dot shifts through colors
+        // Rainbow dots - each dot shifts through colors smoothly
         dot.el.style.filter = '';
-        const shiftedHue = (hue + index * 51.4) % 360; // Shift each dot's hue
-        const colorIndex = Math.floor((shiftedHue / 60) % rainbowColors.length);
-        const color = rainbowColors[colorIndex];
+        const shiftedHue = (hue + index * 51.4) % 360;
+        const colorPos = (shiftedHue / 360) * rainbowColors.length;
+        const colorIndex = Math.floor(colorPos);
+        const nextColorIndex = (colorIndex + 1) % rainbowColors.length;
+        const t = colorPos - colorIndex;
+        const color = interpolateColor(rainbowColors[colorIndex], rainbowColors[nextColorIndex], t);
         dot.el.style.background = `radial-gradient(circle, rgba(${color.r}, ${color.g}, ${color.b}, 0.9), rgba(${color.r}, ${color.g}, ${color.b}, 0.2))`;
         dot.el.style.boxShadow = `0 0 12px rgba(${color.r}, ${color.g}, ${color.b}, 0.6)`;
       } else if (colorMode === 2) {
-        // Solid cycling dots - all same color changing together through rainbow gradient
+        // Solid cycling dots - all same color changing together smoothly
         dot.el.style.filter = '';
-        const colorIndex = Math.floor((hue / 60) % rainbowColors.length);
-        const color = rainbowColors[colorIndex];
+        const colorPos = (hue / 360) * rainbowColors.length;
+        const colorIndex = Math.floor(colorPos);
+        const nextColorIndex = (colorIndex + 1) % rainbowColors.length;
+        const t = colorPos - colorIndex;
+        const color = interpolateColor(rainbowColors[colorIndex], rainbowColors[nextColorIndex], t);
         dot.el.style.background = `radial-gradient(circle, rgba(${color.r}, ${color.g}, ${color.b}, 0.9), rgba(${color.r}, ${color.g}, ${color.b}, 0.2))`;
         dot.el.style.boxShadow = `0 0 12px rgba(${color.r}, ${color.g}, ${color.b}, 0.6)`;
       }
